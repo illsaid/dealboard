@@ -222,7 +222,7 @@ Deno.serve(async (req: Request) => {
     // Auth check
     const syncSecret = Deno.env.get("SYNC_SECRET");
     const providedSecret = req.headers.get("x-sync-secret");
-    if (!syncSecret || providedSecret !== syncSecret) {
+    if (!syncSecret || !providedSecret || providedSecret !== syncSecret) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -268,10 +268,28 @@ Deno.serve(async (req: Request) => {
       recordsFilter = "";
     }
 
-    const [airtableBuyers, airtableRecords] = await Promise.all([
-      fetchAllAirtableRecords(baseId, buyersTableId, pat, buyersFilter),
-      fetchAllAirtableRecords(baseId, recordsTableId, pat, recordsFilter || undefined),
-    ]);
+    let airtableBuyers: AirtableRecord[] = [];
+    let airtableRecords: AirtableRecord[] = [];
+    let fetchErrors: string[] = [];
+
+    try {
+      airtableBuyers = await fetchAllAirtableRecords(baseId, buyersTableId, pat, buyersFilter);
+    } catch (e) {
+      fetchErrors.push(`Buyers (${buyersTableId}): ${e instanceof Error ? e.message : String(e)}`);
+    }
+
+    try {
+      airtableRecords = await fetchAllAirtableRecords(baseId, recordsTableId, pat, recordsFilter || undefined);
+    } catch (e) {
+      fetchErrors.push(`Records (${recordsTableId}): ${e instanceof Error ? e.message : String(e)}`);
+    }
+
+    if (fetchErrors.length > 0 && airtableBuyers.length === 0 && airtableRecords.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Airtable fetch failed", details: fetchErrors }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // ─── Build buyer slug map ─────────────────────────────────────────────
     const buyerAirtableIdToSlug = new Map<string, string>();
@@ -324,6 +342,7 @@ Deno.serve(async (req: Request) => {
           records_fetched: airtableRecords.length,
           records_ready: validRecords.length,
           validation_errors: validationErrors,
+          fetch_errors: fetchErrors.length > 0 ? fetchErrors : undefined,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
