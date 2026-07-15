@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ArrowRight } from 'lucide-react';
-import { getBuyers } from '../data/service';
+import { Search, ArrowRight, X } from 'lucide-react';
+import { getBuyers, pluralize } from '../data/service';
 import { BuyerTypeBadge, ConfidenceBadge, FormatBadge } from '../components/Badges';
 import { PrototypeNotice } from '../components/PrototypeNotice';
 import type { BuyerType, Confidence } from '../data/types';
@@ -11,6 +11,14 @@ export function BuyersPage() {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<BuyerType | ''>('');
   const [filterConfidence, setFilterConfidence] = useState<Confidence | ''>('');
+
+  const hasActiveFilters = search || filterType || filterConfidence;
+
+  const clearFilters = () => {
+    setSearch('');
+    setFilterType('');
+    setFilterConfidence('');
+  };
 
   const filtered = useMemo(() => {
     let results = allBuyers;
@@ -81,7 +89,17 @@ export function BuyersPage() {
         </div>
       </div>
 
-      <p className="text-xs text-ink-500 mb-4">{filtered.length} buyers</p>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-xs text-ink-500">{filtered.length} {pluralize(filtered.length, 'buyer')}</p>
+        {hasActiveFilters && (
+          <button
+            onClick={clearFilters}
+            className="flex items-center gap-1 text-xs text-burgundy-700 hover:text-burgundy-900 font-medium"
+          >
+            <X size={12} /> Clear filters
+          </button>
+        )}
+      </div>
 
       {/* Buyer Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -104,7 +122,7 @@ export function BuyersPage() {
             <p className="text-xs text-ink-600 mt-3 line-clamp-2">{buyer.currentMandate}</p>
             <div className="mt-3 pt-3 border-t border-ink-50 flex items-center justify-between">
               <span className="text-xs text-ink-500">Last verified: {buyer.lastVerified}</span>
-              <span className="text-xs text-ink-400">{buyer.recordIds.length} records</span>
+              <span className="text-xs text-ink-400">{buyer.recordIds.length} {pluralize(buyer.recordIds.length, 'record')}</span>
             </div>
             <p className="text-xs text-ink-500 mt-2">{buyer.recentActivity}</p>
             <span className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-burgundy-700">

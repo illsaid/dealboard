@@ -6,6 +6,16 @@ export type EvidenceTier = 'tier_1' | 'tier_2' | 'tier_3';
 export type Confidence = 'high' | 'medium' | 'low';
 export type BuyerType = 'microdrama_platform' | 'creator_studio' | 'brand_funded' | 'fast_channel' | 'digital_platform' | 'legacy_studio' | 'streamer' | 'financier';
 
+export type ActionRouteStatus = 'verified' | 'likely' | 'none';
+
+export interface ProfessionalAction {
+  status: ActionRouteStatus;
+  label: string;
+  description: string;
+  url?: string;
+  evidence?: string;
+}
+
 export interface DealRecord {
   id: string;
   date: string;
@@ -22,7 +32,7 @@ export interface DealRecord {
   verifiedFacts: string[];
   interpretation: string;
   whyItMatters: string;
-  professionalAction: string;
+  action: ProfessionalAction;
   sources: { name: string; url: string; readTime: string }[];
   relatedRecordIds: string[];
   firstCaptured: string;
@@ -51,7 +61,7 @@ export interface Buyer {
 export interface BriefingIssue {
   id: string;
   date: string;
-  issueNumber: number;
+  issueLabel: string;
   headline: string;
   deck: string;
   signalThisWeek: string;

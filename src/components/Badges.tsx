@@ -1,4 +1,4 @@
-import type { RecordType, EventClass, Format, EvidenceTier, Confidence, BuyerType } from '../data/types';
+import type { RecordType, EventClass, Format, EvidenceTier, Confidence, BuyerType, ActionRouteStatus } from '../data/types';
 
 const recordTypeLabels: Record<RecordType, string> = {
   acquisition: 'Acquisition',
@@ -47,6 +47,12 @@ const confidenceLabels: Record<Confidence, string> = {
   high: 'High',
   medium: 'Medium',
   low: 'Low',
+};
+
+const actionRouteLabels: Record<ActionRouteStatus, string> = {
+  verified: 'Verified route',
+  likely: 'Likely route',
+  none: 'No confirmed route',
 };
 
 export function RecordTypeBadge({ type }: { type: RecordType }) {
@@ -115,4 +121,18 @@ export function ConfidenceBadge({ confidence }: { confidence: Confidence }) {
   );
 }
 
-export { recordTypeLabels, eventClassLabels, formatLabels, buyerTypeLabels, evidenceTierLabels, confidenceLabels };
+export function ActionRouteBadge({ status }: { status: ActionRouteStatus }) {
+  const styles: Record<ActionRouteStatus, string> = {
+    verified: 'bg-forest-50 text-forest-800 border-forest-200',
+    likely: 'bg-amber-50 text-amber-800 border-amber-200',
+    none: 'bg-ink-50 text-ink-500 border-ink-200',
+  };
+
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded border ${styles[status]}`}>
+      {actionRouteLabels[status]}
+    </span>
+  );
+}
+
+export { recordTypeLabels, eventClassLabels, formatLabels, buyerTypeLabels, evidenceTierLabels, confidenceLabels, actionRouteLabels };

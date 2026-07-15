@@ -1,11 +1,24 @@
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, CheckCircle, AlertTriangle } from 'lucide-react';
-import { getRecordById, getBuyerById } from '../data/service';
-import { RecordTypeBadge, EventClassBadge, FormatBadge, EvidenceBadge, ConfidenceBadge } from '../components/Badges';
+import { ArrowLeft, ExternalLink, CheckCircle, AlertTriangle, Lock } from 'lucide-react';
+import { getRecordById, getAccessibleRecordById, isRecordLocked, getBuyerById } from '../data/service';
+import { RecordTypeBadge, EventClassBadge, FormatBadge, EvidenceBadge, ConfidenceBadge, ActionRouteBadge } from '../components/Badges';
 
 export function RecordDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const record = id ? getRecordById(id) : undefined;
+
+  if (id && isRecordLocked(id)) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 text-center">
+        <Lock size={24} className="text-ink-300 mx-auto mb-3" />
+        <h1 className="text-lg font-bold text-ink-900 mb-2">Subscriber-only record</h1>
+        <p className="text-sm text-ink-600 mb-4">This record is available to subscribers. Full access will be available when the subscription tier launches.</p>
+        <p className="text-xs text-ink-400 mb-4">Prototype — this feature demonstrates a future access control.</p>
+        <Link to="/deals" className="text-sm text-burgundy-700 hover:text-burgundy-900">Back to Deal Board</Link>
+      </div>
+    );
+  }
+
+  const record = id ? getAccessibleRecordById(id) : undefined;
 
   if (!record) {
     return (
@@ -17,7 +30,9 @@ export function RecordDetailPage() {
   }
 
   const buyer = getBuyerById(record.buyerId);
-  const relatedRecords = record.relatedRecordIds.map(rid => getRecordById(rid)).filter(Boolean);
+  const relatedRecords = record.relatedRecordIds
+    .map(rid => getRecordById(rid))
+    .filter(r => r && !r.locked);
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
@@ -81,17 +96,45 @@ export function RecordDetailPage() {
         </div>
       </section>
 
-      {/* Why it Matters & Professional Action */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-        <section className="border border-ink-100 rounded-lg p-4 bg-white">
+      {/* Why it Matters */}
+      <section className="mb-8">
+        <div className="border border-ink-100 rounded-lg p-4 bg-white">
           <h2 className="text-xs font-bold text-ink-900 uppercase tracking-wide mb-2">Why It Matters</h2>
           <p className="text-sm text-ink-700 leading-relaxed">{record.whyItMatters}</p>
-        </section>
-        <section className="border border-forest-200 rounded-lg p-4 bg-forest-50">
-          <h2 className="text-xs font-bold text-forest-800 uppercase tracking-wide mb-2">Professional Action</h2>
-          <p className="text-sm text-forest-800 leading-relaxed">{record.professionalAction}</p>
-        </section>
-      </div>
+        </div>
+      </section>
+
+      {/* Professional Action Route */}
+      <section className="mb-8">
+        <h2 className="text-sm font-bold text-ink-900 mb-3">Professional Action</h2>
+        <div className={`rounded-lg p-4 border ${
+          record.action.status === 'verified' ? 'bg-forest-50 border-forest-200' :
+          record.action.status === 'likely' ? 'bg-amber-50 border-amber-200' :
+          'bg-ink-50 border-ink-200'
+        }`}>
+          <div className="flex items-center gap-2 mb-2">
+            <ActionRouteBadge status={record.action.status} />
+          </div>
+          <p className={`text-sm font-medium mb-1 ${
+            record.action.status === 'verified' ? 'text-forest-900' :
+            record.action.status === 'likely' ? 'text-amber-900' :
+            'text-ink-700'
+          }`}>{record.action.label}</p>
+          <p className={`text-sm leading-relaxed ${
+            record.action.status === 'verified' ? 'text-forest-800' :
+            record.action.status === 'likely' ? 'text-amber-800' :
+            'text-ink-600'
+          }`}>{record.action.description}</p>
+          {record.action.evidence && (
+            <p className="text-xs text-ink-500 mt-2 italic">Evidence: {record.action.evidence}</p>
+          )}
+          {record.action.url && (
+            <a href={record.action.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-burgundy-700 hover:text-burgundy-900">
+              <ExternalLink size={11} /> {record.action.url}
+            </a>
+          )}
+        </div>
+      </section>
 
       {/* Evidence Sources */}
       <section className="mb-8">
@@ -99,7 +142,7 @@ export function RecordDetailPage() {
         <div className="space-y-2">
           {record.sources.map((source, i) => (
             <div key={i} className="flex items-center gap-3 text-sm">
-              <a href={source.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-ink-700 hover:text-burgundy-700">
+              <a href={source.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-ink-700 hover:text-burgundy-700 underline">
                 <ExternalLink size={12} />
                 {source.name}
               </a>
@@ -107,7 +150,7 @@ export function RecordDetailPage() {
             </div>
           ))}
         </div>
-        <div className="mt-3 flex items-center gap-4 text-xs text-ink-500">
+        <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-ink-500">
           <span>Source tier: <EvidenceBadge tier={record.evidenceTier} /></span>
           <span>Last verified: {record.lastVerified}</span>
         </div>

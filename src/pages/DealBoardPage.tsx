@@ -1,29 +1,47 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, LayoutGrid, List, ArrowRight, Clock } from 'lucide-react';
-import { getPublishedRecords, getNewThisWeekCount } from '../data/service';
+import { Search, LayoutGrid, List, Clock, X, Lock } from 'lucide-react';
+import { getPublishedRecords, getNewThisWeekCount, getUniqueBuyerNames, pluralize } from '../data/service';
 import { RecordCard } from '../components/RecordCard';
-import { RecordTypeBadge, FormatBadge, ConfidenceBadge } from '../components/Badges';
+import { EventClassBadge, EvidenceBadge, ConfidenceBadge, ActionRouteBadge } from '../components/Badges';
 import { PrototypeNotice } from '../components/PrototypeNotice';
-import type { RecordType, EventClass, Format, EvidenceTier, Confidence } from '../data/types';
+import type { RecordType, EventClass, Format, EvidenceTier, Confidence, Territory, ActionRouteStatus } from '../data/types';
 
 type ViewMode = 'cards' | 'table';
 type SortMode = 'newest' | 'confidence' | 'buyer';
 
+const confidenceOrder: Record<Confidence, number> = { high: 3, medium: 2, low: 1 };
+
 export function DealBoardPage() {
   const allRecords = getPublishedRecords();
   const newThisWeek = getNewThisWeekCount();
+  const buyerNames = getUniqueBuyerNames();
 
   const [search, setSearch] = useState('');
   const [view, setView] = useState<ViewMode>('cards');
   const [sort, setSort] = useState<SortMode>('newest');
+  const [filterBuyer, setFilterBuyer] = useState('');
   const [filterType, setFilterType] = useState<RecordType | ''>('');
   const [filterEventClass, setFilterEventClass] = useState<EventClass | ''>('');
   const [filterFormat, setFilterFormat] = useState<Format | ''>('');
   const [filterEvidence, setFilterEvidence] = useState<EvidenceTier | ''>('');
   const [filterConfidence, setFilterConfidence] = useState<Confidence | ''>('');
+  const [filterTerritory, setFilterTerritory] = useState<Territory | ''>('');
+  const [filterAction, setFilterAction] = useState<ActionRouteStatus | ''>('');
 
-  const confidenceOrder: Record<Confidence, number> = { high: 3, medium: 2, low: 1 };
+  const hasActiveFilters = search || filterBuyer || filterType || filterEventClass || filterFormat || filterEvidence || filterConfidence || filterTerritory || filterAction;
+
+  const clearFilters = () => {
+    setSearch('');
+    setFilterBuyer('');
+    setFilterType('');
+    setFilterEventClass('');
+    setFilterFormat('');
+    setFilterEvidence('');
+    setFilterConfidence('');
+    setFilterTerritory('');
+    setFilterAction('');
+  };
 
   const filtered = useMemo(() => {
     let results = allRecords;
@@ -37,11 +55,14 @@ export function DealBoardPage() {
       );
     }
 
+    if (filterBuyer) results = results.filter(r => r.buyer === filterBuyer);
     if (filterType) results = results.filter(r => r.recordType === filterType);
     if (filterEventClass) results = results.filter(r => r.eventClass === filterEventClass);
     if (filterFormat) results = results.filter(r => r.format === filterFormat);
     if (filterEvidence) results = results.filter(r => r.evidenceTier === filterEvidence);
     if (filterConfidence) results = results.filter(r => r.confidence === filterConfidence);
+    if (filterTerritory) results = results.filter(r => r.territory === filterTerritory);
+    if (filterAction) results = results.filter(r => r.action.status === filterAction);
 
     if (sort === 'confidence') {
       results = [...results].sort((a, b) => confidenceOrder[b.confidence] - confidenceOrder[a.confidence]);
@@ -50,7 +71,7 @@ export function DealBoardPage() {
     }
 
     return results;
-  }, [allRecords, search, filterType, filterEventClass, filterFormat, filterEvidence, filterConfidence, sort]);
+  }, [allRecords, search, filterBuyer, filterType, filterEventClass, filterFormat, filterEvidence, filterConfidence, filterTerritory, filterAction, sort]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
@@ -66,7 +87,7 @@ export function DealBoardPage() {
         <span className="flex items-center gap-1">
           <span className="font-semibold text-burgundy-700">{newThisWeek}</span> new this week
         </span>
-        <span>{allRecords.length} published records</span>
+        <span>{allRecords.length} published {pluralize(allRecords.length, 'record')}</span>
         <span className="flex items-center gap-1">
           <Clock size={12} /> Updated July 14, 2026
         </span>
@@ -112,7 +133,11 @@ export function DealBoardPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-4">
+        <FilterSelect label="Buyer" value={filterBuyer} onChange={setFilterBuyer} options={[
+          { value: '', label: 'All buyers' },
+          ...buyerNames.map(name => ({ value: name, label: name })),
+        ]} />
         <FilterSelect label="Type" value={filterType} onChange={v => setFilterType(v as RecordType | '')} options={[
           { value: '', label: 'All types' },
           { value: 'acquisition', label: 'Acquisition' },
@@ -150,11 +175,36 @@ export function DealBoardPage() {
           { value: 'medium', label: 'Medium' },
           { value: 'low', label: 'Low' },
         ]} />
+        <FilterSelect label="Territory" value={filterTerritory} onChange={v => setFilterTerritory(v as Territory | '')} options={[
+          { value: '', label: 'All territories' },
+          { value: 'global', label: 'Global' },
+          { value: 'north_america', label: 'North America' },
+          { value: 'europe', label: 'Europe' },
+          { value: 'asia_pacific', label: 'Asia Pacific' },
+          { value: 'latin_america', label: 'Latin America' },
+        ]} />
+        <FilterSelect label="Action route" value={filterAction} onChange={v => setFilterAction(v as ActionRouteStatus | '')} options={[
+          { value: '', label: 'All routes' },
+          { value: 'verified', label: 'Verified route' },
+          { value: 'likely', label: 'Likely route' },
+          { value: 'none', label: 'No confirmed route' },
+        ]} />
+      </div>
+
+      {/* Active filter indicator + clear */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-xs text-ink-500">{filtered.length} {pluralize(filtered.length, 'record')}</p>
+        {hasActiveFilters && (
+          <button
+            onClick={clearFilters}
+            className="flex items-center gap-1 text-xs text-burgundy-700 hover:text-burgundy-900 font-medium"
+          >
+            <X size={12} /> Clear filters
+          </button>
+        )}
       </div>
 
       {/* Results */}
-      <p className="text-xs text-ink-500 mb-4">{filtered.length} records</p>
-
       {view === 'cards' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map(record => (
@@ -162,17 +212,19 @@ export function DealBoardPage() {
           ))}
         </div>
       ) : (
-        <div className="border border-ink-100 rounded-lg overflow-hidden bg-white">
-          <div className="overflow-x-auto">
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block border border-ink-100 rounded-lg overflow-hidden bg-white">
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-ink-100 bg-cream-50">
                   <th className="text-left px-3 py-2 font-semibold text-ink-700">Date</th>
                   <th className="text-left px-3 py-2 font-semibold text-ink-700">Buyer</th>
                   <th className="text-left px-3 py-2 font-semibold text-ink-700">Headline</th>
-                  <th className="text-left px-3 py-2 font-semibold text-ink-700">Type</th>
-                  <th className="text-left px-3 py-2 font-semibold text-ink-700">Format</th>
+                  <th className="text-left px-3 py-2 font-semibold text-ink-700">Event</th>
+                  <th className="text-left px-3 py-2 font-semibold text-ink-700">Evidence</th>
                   <th className="text-left px-3 py-2 font-semibold text-ink-700">Confidence</th>
+                  <th className="text-left px-3 py-2 font-semibold text-ink-700">Action</th>
                   <th className="px-3 py-2"></th>
                 </tr>
               </thead>
@@ -181,21 +233,34 @@ export function DealBoardPage() {
                   <tr key={record.id} className="hover:bg-cream-50 transition-colors">
                     <td className="px-3 py-2.5 text-ink-500 whitespace-nowrap">{record.date}</td>
                     <td className="px-3 py-2.5 font-medium text-ink-800 whitespace-nowrap">{record.buyer}</td>
-                    <td className="px-3 py-2.5 text-ink-700 max-w-xs truncate">{record.headline}</td>
-                    <td className="px-3 py-2.5"><RecordTypeBadge type={record.recordType} /></td>
-                    <td className="px-3 py-2.5"><FormatBadge format={record.format} /></td>
+                    <td className="px-3 py-2.5 text-ink-700 max-w-xs">
+                      <span className="line-clamp-1">{record.headline}</span>
+                    </td>
+                    <td className="px-3 py-2.5"><EventClassBadge eventClass={record.eventClass} /></td>
+                    <td className="px-3 py-2.5"><EvidenceBadge tier={record.evidenceTier} /></td>
                     <td className="px-3 py-2.5"><ConfidenceBadge confidence={record.confidence} /></td>
+                    <td className="px-3 py-2.5"><ActionRouteBadge status={record.action.status} /></td>
                     <td className="px-3 py-2.5">
-                      <Link to={`/deals/${record.id}`} className="text-burgundy-700 hover:text-burgundy-900">
-                        <ArrowRight size={14} />
-                      </Link>
+                      {record.locked ? (
+                        <Lock size={14} className="text-ink-300" />
+                      ) : (
+                        <Link to={`/deals/${record.id}`} className="text-xs font-medium text-burgundy-700 hover:text-burgundy-900 whitespace-nowrap">
+                          View
+                        </Link>
+                      )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+          {/* Mobile: use cards instead of overflowing table */}
+          <div className="md:hidden grid grid-cols-1 gap-3">
+            {filtered.map(record => (
+              <RecordCard key={record.id} record={record} compact />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

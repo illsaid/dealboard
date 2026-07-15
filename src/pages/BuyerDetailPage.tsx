@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, HelpCircle } from 'lucide-react';
-import { getBuyerById, getRecordsForBuyer } from '../data/service';
+import { ArrowLeft, HelpCircle, Lock } from 'lucide-react';
+import { getBuyerById, getRecordsForBuyer, pluralize } from '../data/service';
 import { BuyerTypeBadge, ConfidenceBadge, FormatBadge, EventClassBadge } from '../components/Badges';
 
 export function BuyerDetailPage() {
@@ -28,7 +28,7 @@ export function BuyerDetailPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-ink-900">{buyer.name}</h1>
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex flex-wrap items-center gap-2 mt-2">
               <BuyerTypeBadge type={buyer.type} />
               {buyer.primaryFormats.map(f => <FormatBadge key={f} format={f} />)}
             </div>
@@ -78,16 +78,25 @@ export function BuyerDetailPage() {
       {/* Related Records */}
       {records.length > 0 && (
         <section className="mb-8">
-          <h2 className="text-sm font-bold text-ink-900 mb-3">Deal Board Records</h2>
+          <h2 className="text-sm font-bold text-ink-900 mb-3">
+            Deal Board Records ({records.length} {pluralize(records.length, 'record')})
+          </h2>
           <div className="space-y-2">
             {records.map(r => (
-              <Link key={r.id} to={`/deals/${r.id}`} className="block border border-ink-100 rounded-lg p-3 bg-white hover:border-ink-200 transition-colors">
-                <div className="flex items-center gap-2 mb-1">
-                  <EventClassBadge eventClass={r.eventClass} />
-                  <span className="text-xs text-ink-500">{r.date}</span>
+              r.locked ? (
+                <div key={r.id} className="border border-ink-100 rounded-lg p-3 bg-ink-50/50 flex items-center gap-2">
+                  <Lock size={12} className="text-ink-300" />
+                  <span className="text-xs text-ink-400">Subscriber-only record</span>
                 </div>
-                <p className="text-sm font-medium text-ink-800">{r.headline}</p>
-              </Link>
+              ) : (
+                <Link key={r.id} to={`/deals/${r.id}`} className="block border border-ink-100 rounded-lg p-3 bg-white hover:border-ink-200 transition-colors">
+                  <div className="flex items-center gap-2 mb-1">
+                    <EventClassBadge eventClass={r.eventClass} />
+                    <span className="text-xs text-ink-500">{r.date}</span>
+                  </div>
+                  <p className="text-sm font-medium text-ink-800">{r.headline}</p>
+                </Link>
+              )
             ))}
           </div>
         </section>
