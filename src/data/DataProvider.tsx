@@ -88,8 +88,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     async function fetchLiveData() {
       try {
         const [recordsRes, buyersRes] = await Promise.all([
-          supabase!.from('records').select('*').order('date', { ascending: false }),
-          supabase!.from('buyers').select('*').order('last_verified', { ascending: false }),
+          supabase!.from('records').select('*').eq('is_published', true).order('date', { ascending: false }),
+          supabase!.from('buyers').select('*').eq('is_published', true).order('last_verified', { ascending: false }),
         ]);
 
         if (cancelled) return;
