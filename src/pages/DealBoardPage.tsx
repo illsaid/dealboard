@@ -28,8 +28,10 @@ export function DealBoardPage() {
   const [filterConfidence, setFilterConfidence] = useState<Confidence | ''>('');
   const [filterTerritory, setFilterTerritory] = useState<Territory | ''>('');
   const [filterAction, setFilterAction] = useState<ActionRouteStatus | ''>('');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
 
-  const hasActiveFilters = search || filterBuyer || filterType || filterEventClass || filterFormat || filterEvidence || filterConfidence || filterTerritory || filterAction;
+  const hasActiveFilters = search || filterBuyer || filterType || filterEventClass || filterFormat || filterEvidence || filterConfidence || filterTerritory || filterAction || filterDateFrom || filterDateTo;
 
   const clearFilters = () => {
     setSearch('');
@@ -41,6 +43,8 @@ export function DealBoardPage() {
     setFilterConfidence('');
     setFilterTerritory('');
     setFilterAction('');
+    setFilterDateFrom('');
+    setFilterDateTo('');
   };
 
   const filtered = useMemo(() => {
@@ -63,6 +67,8 @@ export function DealBoardPage() {
     if (filterConfidence) results = results.filter(r => r.confidence === filterConfidence);
     if (filterTerritory) results = results.filter(r => r.territory === filterTerritory);
     if (filterAction) results = results.filter(r => r.action.status === filterAction);
+    if (filterDateFrom) results = results.filter(r => r.date >= filterDateFrom);
+    if (filterDateTo) results = results.filter(r => r.date <= filterDateTo);
 
     if (sort === 'confidence') {
       results = [...results].sort((a, b) => confidenceOrder[b.confidence] - confidenceOrder[a.confidence]);
@@ -71,7 +77,7 @@ export function DealBoardPage() {
     }
 
     return results;
-  }, [allRecords, search, filterBuyer, filterType, filterEventClass, filterFormat, filterEvidence, filterConfidence, filterTerritory, filterAction, sort]);
+  }, [allRecords, search, filterBuyer, filterType, filterEventClass, filterFormat, filterEvidence, filterConfidence, filterTerritory, filterAction, filterDateFrom, filterDateTo, sort]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
@@ -115,16 +121,17 @@ export function DealBoardPage() {
             <option value="confidence">Confidence</option>
             <option value="buyer">Buyer</option>
           </select>
+          {/* View toggle hidden on mobile — cards are forced */}
           <button
             onClick={() => setView('cards')}
-            className={`p-2 rounded ${view === 'cards' ? 'bg-ink-900 text-cream-50' : 'text-ink-500 hover:text-ink-900 border border-ink-200'}`}
+            className={`hidden md:inline-flex p-2 rounded ${view === 'cards' ? 'bg-ink-900 text-cream-50' : 'text-ink-500 hover:text-ink-900 border border-ink-200'}`}
             aria-label="Card view"
           >
             <LayoutGrid size={14} />
           </button>
           <button
             onClick={() => setView('table')}
-            className={`p-2 rounded ${view === 'table' ? 'bg-ink-900 text-cream-50' : 'text-ink-500 hover:text-ink-900 border border-ink-200'}`}
+            className={`hidden md:inline-flex p-2 rounded ${view === 'table' ? 'bg-ink-900 text-cream-50' : 'text-ink-500 hover:text-ink-900 border border-ink-200'}`}
             aria-label="Table view"
           >
             <List size={14} />
@@ -189,6 +196,26 @@ export function DealBoardPage() {
           { value: 'likely', label: 'Likely route' },
           { value: 'none', label: 'No confirmed route' },
         ]} />
+        <div className="flex items-center gap-1.5">
+          <label className="text-xs text-ink-500">From</label>
+          <input
+            type="date"
+            value={filterDateFrom}
+            onChange={e => setFilterDateFrom(e.target.value)}
+            className="text-xs border border-ink-200 rounded px-2 py-1.5 bg-white text-ink-700 focus:outline-none focus:border-burgundy-400"
+            aria-label="Date from"
+          />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <label className="text-xs text-ink-500">To</label>
+          <input
+            type="date"
+            value={filterDateTo}
+            onChange={e => setFilterDateTo(e.target.value)}
+            className="text-xs border border-ink-200 rounded px-2 py-1.5 bg-white text-ink-700 focus:outline-none focus:border-burgundy-400"
+            aria-label="Date to"
+          />
+        </div>
       </div>
 
       {/* Active filter indicator + clear */}
@@ -204,17 +231,22 @@ export function DealBoardPage() {
         )}
       </div>
 
-      {/* Results */}
-      {view === 'cards' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filtered.map(record => (
-            <RecordCard key={record.id} record={record} compact />
-          ))}
-        </div>
-      ) : (
-        <>
-          {/* Desktop table */}
-          <div className="hidden md:block border border-ink-100 rounded-lg overflow-hidden bg-white">
+      {/* Results — mobile always shows cards regardless of view toggle */}
+      <div className="md:hidden grid grid-cols-1 gap-3">
+        {filtered.map(record => (
+          <RecordCard key={record.id} record={record} compact />
+        ))}
+      </div>
+
+      <div className="hidden md:block">
+        {view === 'cards' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filtered.map(record => (
+              <RecordCard key={record.id} record={record} compact />
+            ))}
+          </div>
+        ) : (
+          <div className="border border-ink-100 rounded-lg overflow-hidden bg-white">
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-ink-100 bg-cream-50">
@@ -254,14 +286,8 @@ export function DealBoardPage() {
               </tbody>
             </table>
           </div>
-          {/* Mobile: use cards instead of overflowing table */}
-          <div className="md:hidden grid grid-cols-1 gap-3">
-            {filtered.map(record => (
-              <RecordCard key={record.id} record={record} compact />
-            ))}
-          </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
