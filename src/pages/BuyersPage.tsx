@@ -1,13 +1,16 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, ArrowRight, X } from 'lucide-react';
-import { getBuyers, pluralize } from '../data/service';
+import { useBuyers } from '../data/useDataService';
+import { useData } from '../data/DataProvider';
+import { pluralize } from '../data/service';
 import { BuyerTypeBadge, ConfidenceBadge, FormatBadge } from '../components/Badges';
 import { PrototypeNotice } from '../components/PrototypeNotice';
 import type { BuyerType, Confidence } from '../data/types';
 
 export function BuyersPage() {
-  const allBuyers = getBuyers();
+  const { isLive } = useData();
+  const allBuyers = useBuyers();
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<BuyerType | ''>('');
   const [filterConfidence, setFilterConfidence] = useState<Confidence | ''>('');
@@ -40,7 +43,7 @@ export function BuyersPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-      <PrototypeNotice />
+      {!isLive && <PrototypeNotice />}
 
       <header className="mt-6 mb-6">
         <h1 className="text-2xl font-bold text-ink-900">Buyer Directory</h1>

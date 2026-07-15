@@ -1,12 +1,16 @@
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, CheckCircle, AlertTriangle, Lock } from 'lucide-react';
-import { getRecordById, getAccessibleRecordById, isRecordLocked, getBuyerById } from '../data/service';
+import { useAccessibleRecordById, useBuyerById } from '../data/useDataService';
+import { useData } from '../data/DataProvider';
 import { RecordTypeBadge, EventClassBadge, FormatBadge, EvidenceBadge, ConfidenceBadge, ActionRouteBadge } from '../components/Badges';
 
 export function RecordDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { records } = useData();
+  const { record, isLocked } = useAccessibleRecordById(id || '');
+  const buyer = useBuyerById(record?.buyerId || '');
 
-  if (id && isRecordLocked(id)) {
+  if (isLocked) {
     return (
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 text-center">
         <Lock size={24} className="text-ink-300 mx-auto mb-3" />
@@ -18,8 +22,6 @@ export function RecordDetailPage() {
     );
   }
 
-  const record = id ? getAccessibleRecordById(id) : undefined;
-
   if (!record) {
     return (
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 text-center">
@@ -29,9 +31,8 @@ export function RecordDetailPage() {
     );
   }
 
-  const buyer = getBuyerById(record.buyerId);
   const relatedRecords = record.relatedRecordIds
-    .map(rid => getRecordById(rid))
+    .map(rid => records.find(r => r.id === rid))
     .filter(r => r && !r.locked);
 
   return (

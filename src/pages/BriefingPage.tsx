@@ -1,25 +1,27 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, TrendingUp, AlertCircle, Eye } from 'lucide-react';
-import { getLatestIssue, getRecordById, getBuyerById } from '../data/service';
+import { getLatestIssue } from '../data/service';
 import { RecordTypeBadge, EventClassBadge, FormatBadge, ConfidenceBadge, ActionRouteBadge } from '../components/Badges';
 import { EmailCapture } from '../components/EmailCapture';
 import { PrototypeNotice } from '../components/PrototypeNotice';
-import type { Confidence } from '../data/types';
+import type { Confidence, DealRecord } from '../data/types';
+import { records as demoRecords } from '../data/records';
+import { buyers as demoBuyers } from '../data/buyers';
 
 export function BriefingPage() {
   const issue = getLatestIssue();
 
   const moneyMoveRecords = issue.moneyMoves
-    .map(id => getRecordById(id))
+    .map(id => demoRecords.find(r => r.id === id))
     .filter(r => r && r.eventClass === 'confirmed_deal')
     .slice(0, 3);
 
   const legacyCrossoverRecords = issue.legacyCrossovers
-    .map(id => getRecordById(id))
+    .map(id => demoRecords.find(r => r.id === id))
     .filter(r => r && r.eventClass === 'legacy_crossover')
     .slice(0, 1);
 
-  const buyerToWatch = getBuyerById(issue.buyerToWatch);
+  const buyerToWatch = demoBuyers.find(b => b.id === issue.buyerToWatch);
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
@@ -143,7 +145,7 @@ function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }
   );
 }
 
-function MoneyMoveBlock({ record }: { record: NonNullable<ReturnType<typeof getRecordById>> }) {
+function MoneyMoveBlock({ record }: { record: DealRecord }) {
   return (
     <article className="py-4">
       <div className="flex flex-wrap items-center gap-1.5 mb-1.5">

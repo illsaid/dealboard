@@ -2,7 +2,7 @@ export type RecordType = 'acquisition' | 'commission' | 'fund_launch' | 'partner
 export type EventClass = 'confirmed_deal' | 'developing_signal' | 'legacy_crossover';
 export type Format = 'microdrama' | 'short_form' | 'feature' | 'series' | 'unscripted' | 'branded' | 'fast_channel' | 'interactive';
 export type Territory = 'global' | 'north_america' | 'europe' | 'asia_pacific' | 'latin_america' | 'middle_east';
-export type EvidenceTier = 'tier_1' | 'tier_2' | 'tier_3';
+export type EvidenceTier = 'tier_1' | 'tier_2' | 'tier_3' | 'tier_4';
 export type Confidence = 'high' | 'medium' | 'low';
 export type BuyerType = 'microdrama_platform' | 'creator_studio' | 'brand_funded' | 'fast_channel' | 'digital_platform' | 'legacy_studio' | 'streamer' | 'financier';
 
