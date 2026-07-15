@@ -261,27 +261,44 @@ Deno.serve(async (req: Request) => {
     const startedAt = new Date().toISOString();
 
     // ─── Fetch from Airtable ────────────────────────────────────────────────
-    const buyersFilter = `{Publish on Site}=1`;
-    let recordsFilter = `{Website Ready}=1`;
-    if (includeVerified && dryRun) {
-      // In dry-run with include_verified, fetch all records (no filter)
-      recordsFilter = "";
-    }
+    const recordsFilter = (includeVerified && dryRun)
+      ? `OR({Website Ready}=1,{Status}="Verified")`
+      : `{Website Ready}=1`;
 
     let airtableBuyers: AirtableRecord[] = [];
     let airtableRecords: AirtableRecord[] = [];
-    let fetchErrors: string[] = [];
+    const fetchErrors: string[] = [];
 
     try {
-      airtableBuyers = await fetchAllAirtableRecords(baseId, buyersTableId, pat, buyersFilter);
-    } catch (e) {
-      fetchErrors.push(`Buyers (${buyersTableId}): ${e instanceof Error ? e.message : String(e)}`);
-    }
-
-    try {
-      airtableRecords = await fetchAllAirtableRecords(baseId, recordsTableId, pat, recordsFilter || undefined);
+      airtableRecords = await fetchAllAirtableRecords(baseId, recordsTableId, pat, recordsFilter);
     } catch (e) {
       fetchErrors.push(`Records (${recordsTableId}): ${e instanceof Error ? e.message : String(e)}`);
+    }
+
+    if (includeVerified && dryRun) {
+      // Preview mode: fetch ALL buyers linked from the fetched records, ignoring Publish on Site
+      const linkedBuyerIds = new Set<string>();
+      for (const r of airtableRecords) {
+        const links = r.fields["Buyer"] as string[] | undefined;
+        if (links) links.forEach(id => linkedBuyerIds.add(id));
+      }
+      if (linkedBuyerIds.size > 0) {
+        // Fetch buyers by record ID using OR(RECORD_ID()=...) formula
+        const idClauses = [...linkedBuyerIds].map(id => `RECORD_ID()="${id}"`);
+        const buyerFormula = idClauses.length === 1 ? idClauses[0] : `OR(${idClauses.join(",")})`;
+        try {
+          airtableBuyers = await fetchAllAirtableRecords(baseId, buyersTableId, pat, buyerFormula);
+        } catch (e) {
+          fetchErrors.push(`Buyers (${buyersTableId}): ${e instanceof Error ? e.message : String(e)}`);
+        }
+      }
+    } else {
+      // Production mode: only buyers with Publish on Site checked
+      try {
+        airtableBuyers = await fetchAllAirtableRecords(baseId, buyersTableId, pat, `{Publish on Site}=1`);
+      } catch (e) {
+        fetchErrors.push(`Buyers (${buyersTableId}): ${e instanceof Error ? e.message : String(e)}`);
+      }
     }
 
     if (fetchErrors.length > 0 && airtableBuyers.length === 0 && airtableRecords.length === 0) {
@@ -299,22 +316,34 @@ Deno.serve(async (req: Request) => {
     }
 
     // ─── Validate ────────────────────────────────────────────────────────────
-    const validationErrors: ValidationError[] = [];
+    const recordValidationErrors: ValidationError[] = [];
+    const buyerValidationErrors: ValidationError[] = [];
 
     for (const b of airtableBuyers) {
-      validationErrors.push(...validateBuyer(b));
+      buyerValidationErrors.push(...validateBuyer(b));
     }
 
     for (const r of airtableRecords) {
-      validationErrors.push(...validateRecord(r));
+      recordValidationErrors.push(...validateRecord(r));
     }
 
-    // Partition: valid buyers and records
-    const invalidBuyerIds = new Set(validationErrors.filter(e => airtableBuyers.some(b => b.id === e.airtableId)).map(e => e.airtableId));
-    const invalidRecordIds = new Set(validationErrors.filter(e => airtableRecords.some(r => r.id === e.airtableId)).map(e => e.airtableId));
+    // Determine valid buyers (no validation errors)
+    const invalidBuyerIds = new Set(buyerValidationErrors.map(e => e.airtableId));
+    const validBuyerAirtableIds = new Set(
+      airtableBuyers.filter(b => !invalidBuyerIds.has(b.id)).map(b => b.id)
+    );
 
+    // Determine valid records: own fields pass AND at least one linked valid buyer
+    const invalidRecordIds = new Set(recordValidationErrors.map(e => e.airtableId));
+    const validRecords = airtableRecords.filter(r => {
+      if (invalidRecordIds.has(r.id)) return false;
+      const buyerLinks = (r.fields["Buyer"] as string[] | undefined) || [];
+      return buyerLinks.some(bid => validBuyerAirtableIds.has(bid));
+    });
     const validBuyers = airtableBuyers.filter(b => !invalidBuyerIds.has(b.id));
-    const validRecords = airtableRecords.filter(r => !invalidRecordIds.has(r.id));
+
+    // Combined errors for logging
+    const allValidationErrors = [...recordValidationErrors, ...buyerValidationErrors];
 
     // ─── Dry-run response ────────────────────────────────────────────────────
     if (dryRun) {
@@ -330,7 +359,7 @@ Deno.serve(async (req: Request) => {
         records_upserted: 0,
         buyers_unpublished: 0,
         records_unpublished: 0,
-        validation_errors: validationErrors,
+        validation_errors: allValidationErrors,
       });
 
       return new Response(
@@ -341,7 +370,8 @@ Deno.serve(async (req: Request) => {
           buyers_ready: validBuyers.length,
           records_fetched: airtableRecords.length,
           records_ready: validRecords.length,
-          validation_errors: validationErrors,
+          record_validation_errors: recordValidationErrors,
+          buyer_validation_errors: buyerValidationErrors,
           fetch_errors: fetchErrors.length > 0 ? fetchErrors : undefined,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -349,7 +379,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // ─── Production write: fail if validation errors exist ───────────────────
-    if (validationErrors.length > 0) {
+    if (allValidationErrors.length > 0) {
       await supabase.from("sync_runs").insert({
         source: "airtable",
         dry_run: false,
@@ -361,14 +391,15 @@ Deno.serve(async (req: Request) => {
         records_upserted: 0,
         buyers_unpublished: 0,
         records_unpublished: 0,
-        validation_errors: validationErrors,
+        validation_errors: allValidationErrors,
         error_message: "Validation failed; no records written.",
       });
 
       return new Response(
         JSON.stringify({
           error: "Validation failed",
-          validation_errors: validationErrors,
+          record_validation_errors: recordValidationErrors,
+          buyer_validation_errors: buyerValidationErrors,
         }),
         { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
