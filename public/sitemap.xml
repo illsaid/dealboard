@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Static pages -->
+  <url><loc>https://thepickup.co/</loc><lastmod>2026-07-16</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://thepickup.co/buyers</loc><lastmod>2026-07-16</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://thepickup.co/about</loc><lastmod>2026-07-16</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://thepickup.co/subscribe</loc><lastmod>2026-07-16</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
+
+  <!-- Deal records -->
+  <url><loc>https://thepickup.co/deals/reelshort-wwe-live-action-microdrama-partnership</loc><lastmod>2026-07-14</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://thepickup.co/deals/netflix-spotify-jay-shetty-on-purpose-video-partnership</loc><lastmod>2026-05-27</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://thepickup.co/deals/dhar-mann-holywater-fox-40-title-vertical-partnership</loc><lastmod>2026-01-26</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://thepickup.co/deals/samsung-tv-plus-dhar-mann-13-original-scripted-episodes</loc><lastmod>2025-07-28</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+
+  <!-- Buyers -->
+  <url><loc>https://thepickup.co/buyers/samsung-tv-plus</loc><lastmod>2026-07-16</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://thepickup.co/buyers/holywater-my-drama</loc><lastmod>2026-07-16</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://thepickup.co/buyers/fox-entertainment</loc><lastmod>2026-07-16</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://thepickup.co/buyers/spotify</loc><lastmod>2026-07-15</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://thepickup.co/buyers/reelshort</loc><lastmod>2026-07-15</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://thepickup.co/buyers/netflix</loc><lastmod>2026-07-15</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>
+</urlset>
