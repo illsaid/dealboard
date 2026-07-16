@@ -1,93 +1,84 @@
 # Role: Newsletter Editor
 
 **Mode:** AI drafts; human signs.
-
-**Cadence:** Tuesday. Target one complete drafting run and no more than 60 minutes of human editing.
-
-**Governing rules:** [Desk Constitution](./desk-architecture.md), especially Rules 1, 2, 5, 6, 7, 9, 10, and 11.
+**Cadence:** Weekend draft, Sunday sign-off, Monday publication. Target one drafting run and no more than 60 minutes of human editing.
+**Governing rules:** [Desk Constitution](./desk-architecture.md).
 
 ## Reads
 
 - **Board lane:** Records with `Status = Published`, excluding `Record Type = Context-Only`, whose `Published At` falls inside the issue window.
-- **Context lane:** Records with `Record Type = Context-Only` and `Status = Published` in the issue window.
-- **Buyer updates:** Buyers whose mandate, confidence, contact route, or `Last Verified` changed during the issue window.
-- **Corrections:** Material published-record changes logged during the issue window.
+- **Context lane:** approved Context-Only items inside the issue window.
+- **Buyer updates:** mandate, confidence, contact-route, or `Last Verified` changes during the issue window.
+- **Corrections:** material changes to previously published Records during the issue window.
 
-Candidate and Verified-only records do not exist for this role.
+Candidate and Verified-only Records do not exist for this role.
 
 ## Writes
 
-- One free-edition markdown draft.
-- One paid-edition markdown draft.
-- A short list of `[EDITOR CHECK]` items requiring human resolution.
-- No Airtable writes and no status changes.
+- One free-edition Markdown issue using [the Substack issue template](./substack-issue-template.md).
+- One short list of `[EDITOR CHECK]` items requiring human resolution.
+- After sign-off, one immutable signed issue package for both Substack and the website.
+
+No Airtable status changes. No separate website rewrite. No paid edition at launch.
 
 ## Never
 
-- Never include a non-Published record.
+- Never include a non-Published Record as a Board item.
 - Never call a signal an order, purchase, commission, acquisition, greenlight, or completed deal.
-- Never state a deal count that differs from the sum of `Counts As Completed Deal` for the issue window.
-- Never use a blank coverage field as evidence that the trades missed a story.
-- Never identify a Tier 4 source.
-- Never describe a Likely action route as verified or open.
-- Never fill a section quota with weaker records. If no confirmed deals published this week, say so plainly.
+- Never state a deal count that differs from Airtable's issue-window count.
+- Never use blank coverage as evidence that trades missed a story.
+- Never identify a confidential Tier 4 source.
+- Never describe a Likely route as verified or open.
+- Never fill a section quota with weaker material.
 - Never blend interpretation into Verified Facts.
+- Never add a fact while cutting or formatting the signed issue for another channel.
 
 ## Procedure
 
-1. Load the four approved inputs for the issue window.
-2. Confirm the completed-deal count before drafting prose.
-3. Rank records by editorial value:
-   - confirmed deals;
-   - legacy crossovers;
-   - mandate-forming and active-production signals;
-   - other published signals.
-4. Within a class, prefer stronger evidence, professional actionability, freshness, and non-commodity information.
-5. Draft the paid edition first as the complete intelligence product.
-6. Cut the free edition from the paid draft. Do not add facts during the cut.
-7. Mark unresolved ambiguity with `[EDITOR CHECK: question]` rather than resolving it speculatively.
-8. Run the human sign-off checklist before sending.
+1. Load Published Records, approved Context-Only items, buyer changes, and corrections for the issue window.
+2. Confirm the completed-deal count before writing prose.
+3. Rank by editorial value: confirmed deals; legacy crossovers; mandate-forming or active-production signals; other useful context.
+4. Prefer stronger evidence, actionability, freshness, and information an ordinary news prompt would miss.
+5. Identify one defensible weekly pattern. If none exists, do not force `The Signal This Week`.
+6. Draft the issue once using the canonical template.
+7. Mark unresolved ambiguity as `[EDITOR CHECK: question]` rather than resolving it speculatively.
+8. Complete human sign-off and freeze the signed issue package.
+9. Publish the same signed package to Substack and the website.
 
-## Free-edition output
+## Issue structure
 
-1. **Cold open — up to 120 words.** Lead with the week's sharpest verified development. State immediately whether it is a deal, signal, or context item.
-2. **Money moves — up to five.** Confirmed deals only. Each item answers: who, what, disclosed scale or “not disclosed,” evidence, and why it matters.
-3. **Signals forming — up to three.** Clearly labeled forward indicators. Use signal-grade verbs.
-4. **Context lane — up to six one-liners.** Legacy business and scuttlebutt that helps the reader stay fluent but does not enter the database or deal count.
-5. **Buyer spotlight.** Two sentences: current mandate, confidence label, and a teaser for the full profile.
-6. **CTA.** One sentence. Describe the paid product accurately; do not promise universal coverage.
+1. **The Signal This Week — 100–150 words.** Explain the supported pattern and distinguish deals from signals.
+2. **Money Moves — normally 3–5.** Confirmed deals only. Each item states what happened, the supported take, professional action, and source.
+3. **Mandates Forming — normally 0–3.** Forward indicators labeled as signals, with confidence and evidence limits.
+4. **Buyer to Watch — one.** Current mandate, confidence, and a link to the Buyer profile.
+5. **Quick Cuts — normally 0–6.** Concise context and developments that help the reader stay fluent but do not inflate Deal Board counts.
+6. **Corrections — when needed.** Every material correction in the issue window.
+7. **Deal Board CTA — one sentence.** Link to the searchable records and Buyer Directory.
 
-Omit empty sections rather than manufacturing material.
-
-## Paid-edition output
-
-1. **The full board.** Every eligible Published record in the window, with record name, classification, buyer, disclosed volume/value, mandate confidence, evidence tier, why it matters, and action-route status.
-2. **Signals — not yet deals.** Active-production and mandate-forming records under an explicit signal heading.
-3. **Buyer-profile changes.** New or changed mandates with confidence and last-verification date.
-4. **Professional actions.** Two or three evidence-backed actions from the records. If none are supported, state that no confirmed route was found.
-5. **Corrections.** Print every material correction from the issue window.
+Omit empty sections. Counts are ranges, not quotas.
 
 ## Style
 
-- Lead sentences with the buyer and a precise verb.
-- Use exact figures or “not disclosed.” Do not estimate around missing deal values.
-- Avoid hype adjectives and trend-piece throat-clearing.
-- Keep Verified Facts, Interpretation, and Why It Matters visibly distinct.
-- Attach every factual claim to a record ID during drafting; remove the IDs only from reader-facing prose where appropriate.
-- Show mandate confidence when it changes the reader's interpretation: `(confirmed mandate)`, `(current signal)`, or `(observed pattern)`.
-- Prefer short paragraphs and TL;DR-style scanability without sacrificing evidentiary labels.
+- TL;DR-style scanability with an insider, analytical voice.
+- Lead with the buyer and a precise verb.
+- Use exact figures or `not disclosed`; do not estimate missing deal values.
+- Keep paragraphs short and labels explicit.
+- Avoid hype adjectives, outrage hooks, and trend-piece throat-clearing.
+- Keep Verified Facts, Interpretation, Why It Matters, and Action visibly distinct.
+- Retain source Record IDs during drafting; remove them from reader-facing prose only after review.
+- Show confidence when it changes interpretation: `(confirmed mandate)`, `(current signal)`, or `(observed pattern)`.
 
 ## Human sign-off
 
-- [ ] Every item maps to a Published record or approved Context-Only record.
-- [ ] No Candidate or Verified-only information appears.
-- [ ] The completed-deal count matches Airtable exactly.
+- [ ] At least 3 current verified stories support a full homepage brief, or the issue is intentionally reduced/skipped.
+- [ ] Every Board item maps to a Published Record.
+- [ ] The completed-deal count matches Airtable.
 - [ ] Every signal uses signal-grade language.
-- [ ] No section was padded to reach a target count.
-- [ ] Coverage claims use an explicit coverage status and satisfy the 60-day rule.
-- [ ] Any temporal claim is Live-only and states median, sample size, and period.
-- [ ] No Tier 4 source is identifiable.
-- [ ] Action-route language matches its Verified/Likely/None status.
+- [ ] No section was padded.
+- [ ] Coverage and temporal claims satisfy the Constitution.
+- [ ] No confidential source is identifiable.
+- [ ] Action-route and confidence labels are accurate.
 - [ ] Facts and interpretation remain separate.
 - [ ] All `[EDITOR CHECK]` flags are resolved.
-- [ ] Links work and material corrections are visible.
+- [ ] Every link works and corrections are visible.
+- [ ] The website and Substack versions derive from this exact signed package.

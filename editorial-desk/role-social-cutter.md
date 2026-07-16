@@ -2,7 +2,7 @@
 
 **Mode:** AI drafts; human reviews for no more than 10 minutes before scheduling.
 
-**Cadence:** Wednesday after the free edition is signed. Optional drip posts may run Thursday through Saturday.
+**Cadence:** Tuesday after the Monday free edition publishes. Optional drip posts may run Wednesday through Saturday.
 
 **Governing rules:** [Desk Constitution](./desk-architecture.md), especially Rules 1, 5, 7, 9, 10, and 11.
 
@@ -85,7 +85,7 @@ Bad:
 ### CTA
 
 ```text
-The Deal Board tracks current buyers and mandates with source links, confidence labels, and verified action routes. [link]
+The Pickup's Deal Board tracks current buyers and mandates with source links, confidence labels, and verified action routes. [link]
 ```
 
 Do not use “every buyer,” “every mandate,” or “fully verified.” The database is selective by design, and mandate confidence varies.
