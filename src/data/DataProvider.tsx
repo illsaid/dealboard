@@ -25,6 +25,11 @@ export function useData() {
 }
 
 function mapDbRecordToLocal(row: Record<string, unknown>): DealRecord {
+  const recordBuyers = (row.record_buyers as { buyer_id: string; is_primary: boolean }[]) || [];
+  const secondaryBuyerIds = recordBuyers
+    .filter(rb => !rb.is_primary)
+    .map(rb => rb.buyer_id);
+
   return {
     id: row.id as string,
     date: row.date as string,
@@ -44,6 +49,7 @@ function mapDbRecordToLocal(row: Record<string, unknown>): DealRecord {
     action: row.action as DealRecord['action'],
     sources: (row.sources as DealRecord['sources']) || [],
     relatedRecordIds: (row.related_record_ids as string[]) || [],
+    secondaryBuyerIds,
     firstCaptured: (row.first_captured as string) || '',
     lastVerified: (row.last_verified as string) || '',
     locked: (row.locked as boolean) || false,
@@ -88,7 +94,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     async function fetchLiveData() {
       try {
         const [recordsRes, buyersRes] = await Promise.all([
-          supabase!.from('records').select('*').eq('is_published', true).order('date', { ascending: false }),
+          supabase!.from('records').select('*, record_buyers(buyer_id, is_primary)').eq('is_published', true).order('date', { ascending: false }),
           supabase!.from('buyers').select('*').eq('is_published', true).order('last_verified', { ascending: false }),
         ]);
 

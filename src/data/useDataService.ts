@@ -31,7 +31,7 @@ export function useBuyerById(id: string): Buyer | undefined {
 export function useRecordsForBuyer(buyerId: string): DealRecord[] {
   const { records } = useData();
   return records
-    .filter(r => r.buyerId === buyerId)
+    .filter(r => r.buyerId === buyerId || r.secondaryBuyerIds.includes(buyerId))
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
