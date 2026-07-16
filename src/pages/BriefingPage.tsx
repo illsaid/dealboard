@@ -25,7 +25,7 @@ export function BriefingPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
-      <PrototypeNotice />
+      <PrototypeNotice always />
 
       {/* Issue Header */}
       <header className="mt-6 mb-8">
