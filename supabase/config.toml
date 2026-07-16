@@ -1,0 +1,2 @@
+[functions.sync-airtable-publication]
+verify_jwt = false

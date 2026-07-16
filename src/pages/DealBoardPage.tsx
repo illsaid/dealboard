@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, LayoutGrid, List, Clock, X, Lock } from 'lucide-react';
-import { getPublishedRecords, getNewThisWeekCount, getUniqueBuyerNames, pluralize } from '../data/service';
+import { getPublishedRecords, getNewThisWeekCount, getUniqueBuyerNames, getCatalogUpdatedDate, pluralize } from '../data/service';
 import { RecordCard } from '../components/RecordCard';
 import { EventClassBadge, EvidenceBadge, ConfidenceBadge, ActionRouteBadge } from '../components/Badges';
 import { PrototypeNotice } from '../components/PrototypeNotice';
@@ -95,7 +95,7 @@ export function DealBoardPage() {
         </span>
         <span>{allRecords.length} published {pluralize(allRecords.length, 'record')}</span>
         <span className="flex items-center gap-1">
-          <Clock size={12} /> Updated July 14, 2026
+          <Clock size={12} /> Updated {getCatalogUpdatedDate()}
         </span>
       </div>
 
@@ -175,6 +175,7 @@ export function DealBoardPage() {
           { value: 'tier_1', label: 'Tier 1' },
           { value: 'tier_2', label: 'Tier 2' },
           { value: 'tier_3', label: 'Tier 3' },
+          { value: 'tier_4', label: 'Tier 4' },
         ]} />
         <FilterSelect label="Confidence" value={filterConfidence} onChange={v => setFilterConfidence(v as Confidence | '')} options={[
           { value: '', label: 'All levels' },

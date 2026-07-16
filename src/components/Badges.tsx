@@ -41,6 +41,7 @@ const evidenceTierLabels: Record<EvidenceTier, string> = {
   tier_1: 'Tier 1',
   tier_2: 'Tier 2',
   tier_3: 'Tier 3',
+  tier_4: 'Tier 4',
 };
 
 const confidenceLabels: Record<Confidence, string> = {
@@ -98,6 +99,7 @@ export function EvidenceBadge({ tier }: { tier: EvidenceTier }) {
     tier_1: 'bg-forest-50 text-forest-800 border-forest-200',
     tier_2: 'bg-amber-50 text-amber-800 border-amber-200',
     tier_3: 'bg-ink-50 text-ink-600 border-ink-200',
+    tier_4: 'bg-burgundy-50 text-burgundy-800 border-burgundy-200',
   };
 
   return (

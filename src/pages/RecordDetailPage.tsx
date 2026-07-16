@@ -29,7 +29,15 @@ export function RecordDetailPage() {
     );
   }
 
-  const buyer = getBuyerById(record.buyerId);
+  const buyers = [record.buyerId, ...record.secondaryBuyerIds]
+    .filter((buyerId, index, buyerIds) => buyerIds.indexOf(buyerId) === index)
+    .map((buyerId) => ({
+      buyer: getBuyerById(buyerId),
+      isPrimary: buyerId === record.buyerId,
+    }))
+    .filter((entry): entry is { buyer: NonNullable<ReturnType<typeof getBuyerById>>; isPrimary: boolean } =>
+      Boolean(entry.buyer)
+    );
   const relatedRecords = record.relatedRecordIds
     .map(rid => getRecordById(rid))
     .filter(r => r && !r.locked);
@@ -156,20 +164,29 @@ export function RecordDetailPage() {
         </div>
       </section>
 
-      {/* Related Buyer */}
-      {buyer && (
+      {/* Related Buyers */}
+      {buyers.length > 0 && (
         <section className="mb-8">
-          <h2 className="text-sm font-bold text-ink-900 mb-3">Related Buyer</h2>
-          <Link to={`/buyers/${buyer.id}`} className="block border border-ink-100 rounded-lg p-4 bg-white hover:border-ink-200 transition-colors">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-ink-900">{buyer.name}</p>
-                <p className="text-xs text-ink-500 capitalize mt-0.5">{buyer.type.replace(/_/g, ' ')}</p>
-              </div>
-              <ConfidenceBadge confidence={buyer.mandateConfidence} />
-            </div>
-            <p className="text-xs text-ink-600 mt-2 line-clamp-2">{buyer.currentMandate}</p>
-          </Link>
+          <h2 className="text-sm font-bold text-ink-900 mb-3">Related Buyers</h2>
+          <div className="space-y-2">
+            {buyers.map(({ buyer, isPrimary }) => (
+              <Link key={buyer.id} to={`/buyers/${buyer.id}`} className="block border border-ink-100 rounded-lg p-4 bg-white hover:border-ink-200 transition-colors">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-ink-900">{buyer.name}</p>
+                      <span className="text-[10px] uppercase tracking-wide text-ink-400">
+                        {isPrimary ? 'Primary' : 'Secondary'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-ink-500 capitalize mt-0.5">{buyer.type.replace(/_/g, ' ')}</p>
+                  </div>
+                  <ConfidenceBadge confidence={buyer.mandateConfidence} />
+                </div>
+                <p className="text-xs text-ink-600 mt-2 line-clamp-2">{buyer.currentMandate}</p>
+              </Link>
+            ))}
+          </div>
         </section>
       )}
 

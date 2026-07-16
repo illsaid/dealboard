@@ -1,3 +1,5 @@
+import { getDataMode } from '../data/service';
+
 export function Footer() {
   return (
     <footer className="border-t border-ink-100 mt-16">
@@ -7,7 +9,11 @@ export function Footer() {
             <p className="text-sm font-bold text-ink-900">THE DEAL BOARD</p>
             <p className="text-xs text-ink-500 mt-0.5">The scoreboard for who's buying entertainment now.</p>
           </div>
-          <p className="text-xs text-ink-400">Prototype demonstration. Not real reporting.</p>
+          <p className="text-xs text-ink-400">
+            {getDataMode() === 'published'
+              ? 'Verified intelligence. Sources and confidence are shown on every record.'
+              : 'Prototype demonstration. Not real reporting.'}
+          </p>
         </div>
       </div>
     </footer>
