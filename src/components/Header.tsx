@@ -7,8 +7,7 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems = [
-    { path: '/', label: 'Latest Briefing' },
-    { path: '/deals', label: 'Deal Board' },
+    { path: '/', label: 'Deal Board' },
     { path: '/buyers', label: 'Buyers' },
     { path: '/about', label: 'About' },
   ];
@@ -23,7 +22,7 @@ export function Header() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-14">
           <Link to="/" className="flex items-baseline gap-3">
-            <span className="text-lg font-bold tracking-tight text-ink-900">THE DEAL BOARD</span>
+            <span className="text-lg font-bold tracking-tight text-ink-900">THE PICKUP</span>
             <span className="hidden sm:inline text-xs text-ink-400 font-medium">The scoreboard for who's buying entertainment now.</span>
           </Link>
 
