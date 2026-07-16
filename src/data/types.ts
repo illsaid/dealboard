@@ -21,7 +21,6 @@ export interface DealRecord {
   date: string;
   buyer: string;
   buyerId: string;
-  secondaryBuyerIds: string[];
   headline: string;
   recordType: RecordType;
   eventClass: EventClass;
@@ -36,6 +35,7 @@ export interface DealRecord {
   action: ProfessionalAction;
   sources: { name: string; url: string; readTime: string }[];
   relatedRecordIds: string[];
+  secondaryBuyerIds: string[];
   firstCaptured: string;
   lastVerified: string;
   locked?: boolean;

@@ -1,11 +1,13 @@
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, HelpCircle, Lock } from 'lucide-react';
-import { getBuyerById, getRecordsForBuyer, pluralize } from '../data/service';
+import { useBuyerById, useRecordsForBuyer } from '../data/useDataService';
+import { pluralize } from '../data/service';
 import { BuyerTypeBadge, ConfidenceBadge, FormatBadge, EventClassBadge } from '../components/Badges';
 
 export function BuyerDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const buyer = id ? getBuyerById(id) : undefined;
+  const buyer = useBuyerById(id || '');
+  const records = useRecordsForBuyer(id || '');
 
   if (!buyer) {
     return (
@@ -16,7 +18,7 @@ export function BuyerDetailPage() {
     );
   }
 
-  const records = getRecordsForBuyer(buyer.id);
+  const buyerRecords = records;
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
@@ -76,13 +78,13 @@ export function BuyerDetailPage() {
       </section>
 
       {/* Related Records */}
-      {records.length > 0 && (
+      {buyerRecords.length > 0 && (
         <section className="mb-8">
           <h2 className="text-sm font-bold text-ink-900 mb-3">
-            Deal Board Records ({records.length} {pluralize(records.length, 'record')})
+            Deal Board Records ({buyerRecords.length} {pluralize(buyerRecords.length, 'record')})
           </h2>
           <div className="space-y-2">
-            {records.map(r => (
+            {buyerRecords.map(r => (
               r.locked ? (
                 <div key={r.id} className="border border-ink-100 rounded-lg p-3 bg-ink-50/50 flex items-center gap-2">
                   <Lock size={12} className="text-ink-300" />

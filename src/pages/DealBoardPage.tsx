@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, LayoutGrid, List, Clock, X, Lock } from 'lucide-react';
-import { getPublishedRecords, getNewThisWeekCount, getUniqueBuyerNames, getCatalogUpdatedDate, pluralize } from '../data/service';
+import { useRecords, useNewThisWeekCount, useUniqueBuyerNames } from '../data/useDataService';
+import { useData } from '../data/DataProvider';
+import { pluralize } from '../data/service';
 import { RecordCard } from '../components/RecordCard';
 import { EventClassBadge, EvidenceBadge, ConfidenceBadge, ActionRouteBadge } from '../components/Badges';
 import { PrototypeNotice } from '../components/PrototypeNotice';
@@ -13,9 +15,10 @@ type SortMode = 'newest' | 'confidence' | 'buyer';
 const confidenceOrder: Record<Confidence, number> = { high: 3, medium: 2, low: 1 };
 
 export function DealBoardPage() {
-  const allRecords = getPublishedRecords();
-  const newThisWeek = getNewThisWeekCount();
-  const buyerNames = getUniqueBuyerNames();
+  const { isLive, latestVerifiedDate } = useData();
+  const allRecords = useRecords();
+  const newThisWeek = useNewThisWeekCount();
+  const buyerNames = useUniqueBuyerNames();
 
   const [search, setSearch] = useState('');
   const [view, setView] = useState<ViewMode>('cards');
@@ -79,9 +82,13 @@ export function DealBoardPage() {
     return results;
   }, [allRecords, search, filterBuyer, filterType, filterEventClass, filterFormat, filterEvidence, filterConfidence, filterTerritory, filterAction, filterDateFrom, filterDateTo, sort]);
 
+  const updatedLabel = latestVerifiedDate
+    ? `Updated ${new Date(latestVerifiedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
+    : 'Updated July 14, 2026';
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-      <PrototypeNotice />
+      {!isLive && <PrototypeNotice />}
 
       <header className="mt-6 mb-6">
         <h1 className="text-2xl font-bold text-ink-900">Deal Board</h1>
@@ -95,7 +102,7 @@ export function DealBoardPage() {
         </span>
         <span>{allRecords.length} published {pluralize(allRecords.length, 'record')}</span>
         <span className="flex items-center gap-1">
-          <Clock size={12} /> Updated {getCatalogUpdatedDate()}
+          <Clock size={12} /> {updatedLabel}
         </span>
       </div>
 

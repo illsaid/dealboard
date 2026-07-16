@@ -99,7 +99,7 @@ export function EvidenceBadge({ tier }: { tier: EvidenceTier }) {
     tier_1: 'bg-forest-50 text-forest-800 border-forest-200',
     tier_2: 'bg-amber-50 text-amber-800 border-amber-200',
     tier_3: 'bg-ink-50 text-ink-600 border-ink-200',
-    tier_4: 'bg-burgundy-50 text-burgundy-800 border-burgundy-200',
+    tier_4: 'bg-ink-50 text-ink-400 border-ink-100',
   };
 
   return (

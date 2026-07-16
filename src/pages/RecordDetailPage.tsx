@@ -1,12 +1,20 @@
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, CheckCircle, AlertTriangle, Lock } from 'lucide-react';
-import { getRecordById, getAccessibleRecordById, isRecordLocked, getBuyerById } from '../data/service';
+import { useAccessibleRecordById, useBuyerById, useBuyers } from '../data/useDataService';
+import { useData } from '../data/DataProvider';
 import { RecordTypeBadge, EventClassBadge, FormatBadge, EvidenceBadge, ConfidenceBadge, ActionRouteBadge } from '../components/Badges';
 
 export function RecordDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { records } = useData();
+  const { record, isLocked } = useAccessibleRecordById(id || '');
+  const primaryBuyer = useBuyerById(record?.buyerId || '');
+  const allBuyers = useBuyers();
+  const secondaryBuyers = (record?.secondaryBuyerIds ?? [])
+    .map(bid => allBuyers.find(b => b.id === bid))
+    .filter((b): b is NonNullable<typeof b> => b !== undefined);
 
-  if (id && isRecordLocked(id)) {
+  if (isLocked) {
     return (
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 text-center">
         <Lock size={24} className="text-ink-300 mx-auto mb-3" />
@@ -18,8 +26,6 @@ export function RecordDetailPage() {
     );
   }
 
-  const record = id ? getAccessibleRecordById(id) : undefined;
-
   if (!record) {
     return (
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 text-center">
@@ -29,17 +35,8 @@ export function RecordDetailPage() {
     );
   }
 
-  const buyers = [record.buyerId, ...record.secondaryBuyerIds]
-    .filter((buyerId, index, buyerIds) => buyerIds.indexOf(buyerId) === index)
-    .map((buyerId) => ({
-      buyer: getBuyerById(buyerId),
-      isPrimary: buyerId === record.buyerId,
-    }))
-    .filter((entry): entry is { buyer: NonNullable<ReturnType<typeof getBuyerById>>; isPrimary: boolean } =>
-      Boolean(entry.buyer)
-    );
   const relatedRecords = record.relatedRecordIds
-    .map(rid => getRecordById(rid))
+    .map(rid => records.find(r => r.id === rid))
     .filter(r => r && !r.locked);
 
   return (
@@ -165,19 +162,34 @@ export function RecordDetailPage() {
       </section>
 
       {/* Related Buyers */}
-      {buyers.length > 0 && (
+      {(primaryBuyer || secondaryBuyers.length > 0) && (
         <section className="mb-8">
-          <h2 className="text-sm font-bold text-ink-900 mb-3">Related Buyers</h2>
+          <h2 className="text-sm font-bold text-ink-900 mb-3">
+            {secondaryBuyers.length > 0 ? 'Related Buyers' : 'Related Buyer'}
+          </h2>
           <div className="space-y-2">
-            {buyers.map(({ buyer, isPrimary }) => (
+            {primaryBuyer && (
+              <Link to={`/buyers/${primaryBuyer.id}`} className="block border border-ink-100 rounded-lg p-4 bg-white hover:border-ink-200 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-ink-900">{primaryBuyer.name}</p>
+                      <span className="text-xs text-ink-400 bg-ink-100 rounded px-1.5 py-0.5">Primary</span>
+                    </div>
+                    <p className="text-xs text-ink-500 capitalize mt-0.5">{primaryBuyer.type.replace(/_/g, ' ')}</p>
+                  </div>
+                  <ConfidenceBadge confidence={primaryBuyer.mandateConfidence} />
+                </div>
+                <p className="text-xs text-ink-600 mt-2 line-clamp-2">{primaryBuyer.currentMandate}</p>
+              </Link>
+            )}
+            {secondaryBuyers.map(buyer => (
               <Link key={buyer.id} to={`/buyers/${buyer.id}`} className="block border border-ink-100 rounded-lg p-4 bg-white hover:border-ink-200 transition-colors">
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="font-semibold text-ink-900">{buyer.name}</p>
-                      <span className="text-[10px] uppercase tracking-wide text-ink-400">
-                        {isPrimary ? 'Primary' : 'Secondary'}
-                      </span>
+                      <span className="text-xs text-ink-400 bg-ink-50 border border-ink-200 rounded px-1.5 py-0.5">Secondary</span>
                     </div>
                     <p className="text-xs text-ink-500 capitalize mt-0.5">{buyer.type.replace(/_/g, ' ')}</p>
                   </div>

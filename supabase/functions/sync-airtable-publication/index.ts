@@ -1,549 +1,603 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
-
-type AirtableRecord = {
-  id: string;
-  createdTime: string;
-  fields: Record<string, unknown>;
-};
-
-type ValidationError = {
-  airtableId: string;
-  slug: string;
-  field: string;
-  message: string;
-};
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const corsHeaders = {
-  "access-control-allow-origin": "*",
-  "access-control-allow-headers": "content-type, x-sync-secret",
-  "access-control-allow-methods": "POST, OPTIONS",
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers":
+    "Content-Type, Authorization, X-Client-Info, Apikey, X-Sync-Secret",
 };
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body, null, 2), {
-    status,
-    headers: { ...corsHeaders, "content-type": "application/json" },
-  });
+interface AirtableRecord {
+  id: string;
+  fields: Record<string, unknown>;
 }
 
-function requiredEnv(name: string) {
-  const value = Deno.env.get(name);
-  if (!value) throw new Error(`Missing required secret: ${name}`);
-  return value;
+interface ValidationError {
+  airtableId: string;
+  slug?: string;
+  field: string;
+  message: string;
 }
 
-function selectName(value: unknown): string {
-  if (typeof value === "string") return value;
-  if (value && typeof value === "object" && "name" in value) {
-    return String((value as { name: unknown }).name ?? "");
-  }
-  return "";
-}
+// ─── Field mapping helpers ────────────────────────────────────────────────────
 
-function textValue(value: unknown): string {
-  if (typeof value === "string") return value.trim();
-  if (typeof value === "number") return String(value);
-  if (Array.isArray(value) && value.length > 0) return textValue(value[0]);
-  return "";
-}
-
-function numberValue(value: unknown): number {
-  if (typeof value === "number") return value;
-  const parsed = Number(textValue(value));
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function splitLines(value: unknown): string[] {
-  return textValue(value)
-    .split(/\r?\n/)
-    .map((line) => line.replace(/^[-*]\s*/, "").trim())
-    .filter(Boolean);
-}
-
-function linkedIds(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((item) => {
-    if (typeof item === "string") return [item];
-    if (item && typeof item === "object" && "id" in item) {
-      return [String((item as { id: unknown }).id)];
-    }
-    return [];
-  });
-}
-
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 100);
-}
-
-function normalizeTerritory(value: unknown) {
-  const territory = textValue(value).toLowerCase();
-  if (/latin|mexico|south america/.test(territory)) return "latin_america";
-  if (/europe|uk|united kingdom|france|germany|spain|italy/.test(territory)) return "europe";
-  if (/asia|china|japan|korea|india|australia|pacific/.test(territory)) return "asia_pacific";
-  if (/middle east|mena|uae|saudi/.test(territory)) return "middle_east";
-  if (/north america|united states|usa|canada|los angeles|new york/.test(territory)) return "north_america";
-  return "global";
-}
-
-const recordTypeMap: Record<string, string> = {
-  "Content Order": "commission",
-  "Acquisition / Licensing": "acquisition",
-  "Acquisition/Licensing": "acquisition",
-  "Development Relationship": "development",
-  "Brand-Funded Entertainment": "partnership",
-  "Company Capital": "fund_launch",
-  "Distribution Expansion": "license",
-};
-
-const formatMap: Record<string, string> = {
-  "Microdrama / Vertical Fiction": "microdrama",
-  "Creator-Led Episodic": "series",
-  "Creator-led Episodic": "series",
-  "Brand-Funded Series": "branded",
-  "Branded Entertainment": "branded",
-  "FAST / AVOD Original": "fast_channel",
-  "Digital Studio / Fund Slate": "series",
-  "Video Podcast": "unscripted",
-  "Other": "series",
-};
-
-const buyerTypeMap: Record<string, string> = {
-  "Microdrama / Vertical Platform": "microdrama_platform",
-  "Creator Studio": "creator_studio",
-  "Brand / Agency": "brand_funded",
-  "FAST / AVOD Channel": "fast_channel",
-  "Digital Studio / Content Fund": "digital_platform",
-  "Legacy Crossover": "legacy_studio",
-  "Other": "digital_platform",
-};
-
-function normalizeConfidence(value: unknown) {
-  const confidence = selectName(value);
-  if (confidence === "Confirmed Mandate") return "high";
-  if (confidence === "Current Signal") return "medium";
-  return "low";
-}
-
-function normalizeEventClass(fields: Record<string, unknown>) {
-  if (selectName(fields.Wedge) === "Legacy Crossover") return "legacy_crossover";
-  if (selectName(fields["Record Type"]) === "Confirmed Deal") return "confirmed_deal";
+function mapEventClass(recordType: string | undefined, wedge: string | undefined): string {
+  if (wedge === "Legacy Crossover") return "legacy_crossover";
+  if (recordType === "Confirmed Deal") return "confirmed_deal";
   return "developing_signal";
 }
 
-function normalizeActionStatus(value: unknown) {
-  const status = selectName(value);
-  if (status === "Verified route") return "verified";
-  if (status === "Likely route") return "likely";
-  return "none";
+function mapRecordType(eventClass: string | undefined): string {
+  if (!eventClass) return "development";
+  const map: Record<string, string> = {
+    "Content Order": "commission",
+    "Acquisition / Licensing": "acquisition",
+    "Acquisition/Licensing": "acquisition",
+    "Development Relationship": "development",
+    "Brand-Funded Entertainment": "partnership",
+    "Company Capital": "fund_launch",
+    "Distribution Expansion": "license",
+  };
+  return map[eventClass] || "development";
 }
 
-function sourceFromUrl(value: unknown) {
-  const url = textValue(value);
-  if (!url) return null;
-  let name = "Source";
-  try {
-    name = new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    // Airtable already validates URL fields; retain a neutral label if needed.
-  }
-  return { name, url, readTime: "" };
+function mapActionStatus(status: string | undefined): string {
+  if (!status) return "none";
+  const map: Record<string, string> = {
+    "Verified route": "verified",
+    "Likely route": "likely",
+    "No confirmed route": "none",
+  };
+  return map[status] || "none";
 }
 
-async function fetchAirtableTable(
+function mapEvidenceTier(tier: string | undefined): string {
+  if (!tier) return "tier_3";
+  const map: Record<string, string> = {
+    "Tier 1": "tier_1",
+    "Tier 2": "tier_2",
+    "Tier 3": "tier_3",
+    "Tier 4": "tier_4",
+  };
+  return map[tier] || "tier_3";
+}
+
+function mapConfidence(conf: string | undefined): string {
+  if (!conf) return "low";
+  return conf.toLowerCase();
+}
+
+function mapTerritory(territory: string | undefined): string {
+  if (!territory) return "global";
+  const map: Record<string, string> = {
+    Global: "global",
+    "North America": "north_america",
+    Europe: "europe",
+    "Asia Pacific": "asia_pacific",
+    "Latin America": "latin_america",
+    "Middle East": "middle_east",
+  };
+  return map[territory] || "global";
+}
+
+function mapFormat(format: string | undefined): string {
+  if (!format) return "series";
+  const map: Record<string, string> = {
+    Microdrama: "microdrama",
+    "Short Form": "short_form",
+    Feature: "feature",
+    Series: "series",
+    Unscripted: "unscripted",
+    Branded: "branded",
+    "FAST Channel": "fast_channel",
+    Interactive: "interactive",
+  };
+  return map[format] || "series";
+}
+
+function mapBuyerType(type: string | undefined): string {
+  if (!type) return "digital_platform";
+  const map: Record<string, string> = {
+    "Microdrama Platform": "microdrama_platform",
+    "Creator Studio": "creator_studio",
+    "Brand-Funded": "brand_funded",
+    "FAST Channel": "fast_channel",
+    "Digital Platform": "digital_platform",
+    "Legacy Studio": "legacy_studio",
+    Streamer: "streamer",
+    Financier: "financier",
+  };
+  return map[type] || "digital_platform";
+}
+
+function asString(val: unknown): string {
+  if (val === null || val === undefined) return "";
+  if (typeof val === "string") return val;
+  if (Array.isArray(val)) return val.join(", ");
+  return String(val);
+}
+
+function asStringArray(val: unknown): string[] {
+  if (!val) return [];
+  if (Array.isArray(val)) return val.map((v) => String(v));
+  if (typeof val === "string") return val.split("\n").map((s) => s.trim()).filter(Boolean);
+  return [];
+}
+
+// ─── Airtable pagination ──────────────────────────────────────────────────────
+
+async function fetchAllAirtableRecords(
   baseId: string,
   tableId: string,
-  token: string,
-  filterByFormula?: string,
-) {
-  const records: AirtableRecord[] = [];
+  pat: string,
+  filterFormula?: string
+): Promise<AirtableRecord[]> {
+  const allRecords: AirtableRecord[] = [];
   let offset: string | undefined;
 
   do {
-    const url = new URL(`https://api.airtable.com/v0/${baseId}/${tableId}`);
-    url.searchParams.set("pageSize", "100");
-    if (filterByFormula) url.searchParams.set("filterByFormula", filterByFormula);
-    if (offset) url.searchParams.set("offset", offset);
+    const params = new URLSearchParams();
+    if (filterFormula) params.set("filterByFormula", filterFormula);
+    if (offset) params.set("offset", offset);
 
-    const response = await fetch(url, {
-      headers: { authorization: `Bearer ${token}` },
+    const url = `https://api.airtable.com/v0/${baseId}/${tableId}?${params.toString()}`;
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${pat}` },
     });
-    if (!response.ok) {
-      throw new Error(`Airtable ${tableId} request failed (${response.status})`);
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Airtable API error (${res.status}): ${text}`);
     }
 
-    const payload = await response.json() as {
-      records?: AirtableRecord[];
-      offset?: string;
-    };
-    records.push(...(payload.records ?? []));
-    offset = payload.offset;
+    const data = await res.json();
+    allRecords.push(...(data.records || []));
+    offset = data.offset;
   } while (offset);
 
-  return records;
+  return allRecords;
 }
 
-function mapBuyer(record: AirtableRecord, errors: ValidationError[]) {
-  const fields = record.fields;
-  const name = textValue(fields["Buyer Name"]);
-  const slug = textValue(fields["Public Slug"]);
-  const description = textValue(fields["Public Description"]);
-  const mandate = textValue(fields["Current Mandate"]);
-  const lastVerified = textValue(fields["Last Verified"]);
+// ─── Validation ───────────────────────────────────────────────────────────────
 
-  const missing = [
-    ["Buyer Name", name],
-    ["Public Slug", slug],
-    ["Public Description", description],
-    ["Current Mandate", mandate],
-    ["Last Verified", lastVerified],
-  ].filter(([, value]) => !value).map(([field]) => field);
+function validateBuyer(rec: AirtableRecord): ValidationError[] {
+  const errors: ValidationError[] = [];
+  const f = rec.fields;
+  const slug = asString(f["Public Slug"]);
 
-  if (missing.length > 0) {
-    errors.push(...missing.map((field) => ({
-      airtableId: record.id,
-      slug,
-      field,
-      message: `Missing required field: ${field}`,
-    })));
-    return null;
+  const required = ["Buyer Name", "Public Slug", "Public Description", "Current Mandate", "Last Verified"];
+  for (const field of required) {
+    if (!f[field]) {
+      errors.push({ airtableId: rec.id, slug, field, message: `Missing required field: ${field}` });
+    }
+  }
+  return errors;
+}
+
+function validateRecord(rec: AirtableRecord): ValidationError[] {
+  const errors: ValidationError[] = [];
+  const f = rec.fields;
+  const slug = asString(f["Public Slug"]);
+
+  const required = [
+    "Public Slug",
+    "Record Name",
+    "Official Announcement Date",
+    "Public Summary",
+    "Why It Matters",
+    "Action Route Status",
+    "Primary Source URL",
+  ];
+  for (const field of required) {
+    if (!f[field]) {
+      errors.push({ airtableId: rec.id, slug, field, message: `Missing required field: ${field}` });
+    }
   }
 
-  return {
-    id: slugify(slug),
-    airtable_record_id: record.id,
-    name,
-    type: buyerTypeMap[selectName(fields["Buyer Type"])] ?? "digital_platform",
-    description,
-    primary_formats: [] as string[],
-    territory: normalizeTerritory(fields["HQ / Territory"]),
-    current_mandate: mandate,
-    mandate_confidence: normalizeConfidence(fields["Mandate Confidence"]),
-    mandate_evidence: splitLines(fields["Mandate Evidence"]),
-    recent_activity: "",
-    activity_timeline: [] as Array<{ date: string; event: string }>,
-    contact_route: textValue(fields["Contact Route"]) || null,
-    contact_route_url: textValue(fields["Contact Route URL"]) || null,
-    open_questions: splitLines(fields["Open Questions"]),
-    last_verified: lastVerified,
-    publish_on_site: true,
-    is_published: true,
-    updated_at: new Date().toISOString(),
-  };
+  // Buyer link validation
+  const buyerLinks = f["Buyer"] as string[] | undefined;
+  if (!buyerLinks || buyerLinks.length === 0) {
+    errors.push({ airtableId: rec.id, slug, field: "Buyer", message: "No linked buyer" });
+  }
+
+  return errors;
 }
 
-function mapDealRecord(
-  record: AirtableRecord,
-  buyersByAirtableId: Map<string, ReturnType<typeof mapBuyer>>,
-  errors: ValidationError[],
-) {
-  const fields = record.fields;
-  const recordKind = selectName(fields["Record Type"]);
-  if (recordKind === "Context-Only") {
-    errors.push({
-      airtableId: record.id,
-      slug: textValue(fields["Public Slug"]),
-      field: "Record Type",
-      message: "Context-Only records belong in briefing context, not the Deal Board table.",
+// ─── Main handler ─────────────────────────────────────────────────────────────
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 200, headers: corsHeaders });
+  }
+
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-    return null;
   }
-
-  const slug = textValue(fields["Public Slug"]);
-  const headline = textValue(fields["Record Name"]);
-  const date = textValue(fields["Official Announcement Date"]);
-  const summary = textValue(fields["Public Summary"]);
-  const whyItMatters = textValue(fields["Why It Matters"]);
-  const actionStatus = selectName(fields["Action Route Status"]);
-  const buyerIds = linkedIds(fields.Buyer);
-  const availableBuyers = buyerIds
-    .map((id) => buyersByAirtableId.get(id))
-    .filter((buyer): buyer is NonNullable<typeof buyer> => Boolean(buyer));
-  const primaryBuyer = availableBuyers[0];
-
-  const missing = [
-    ["Public Slug", slug],
-    ["Record Name", headline],
-    ["Official Announcement Date", date],
-    ["Public Summary", summary],
-    ["Why It Matters", whyItMatters],
-    ["Action Route Status", actionStatus],
-    ["Published buyer profile", primaryBuyer?.id ?? ""],
-  ].filter(([, value]) => !value).map(([field]) => field);
-
-  if (missing.length > 0) {
-    errors.push(...missing.map((field) => ({
-      airtableId: record.id,
-      slug,
-      field,
-      message: `Missing required field: ${field}`,
-    })));
-    return null;
-  }
-
-  const eventClassName = selectName(fields["Event Class"]);
-  const formatName = selectName(fields.Format);
-  const accessLevel = selectName(fields["Access Level"]).toLowerCase() === "paid"
-    ? "paid"
-    : "free";
-  const tier = Math.min(4, Math.max(1, numberValue(fields["Highest Evidence Tier"]) || 1));
-  const sources = [
-    sourceFromUrl(fields["Primary Source URL"]),
-    sourceFromUrl(fields["Secondary Source URL"]),
-  ].filter(Boolean);
-
-  return {
-    row: {
-      id: slugify(slug),
-      airtable_record_id: record.id,
-      date,
-      buyer: primaryBuyer!.name,
-      buyer_id: primaryBuyer!.id,
-      headline,
-      record_type: recordTypeMap[eventClassName] ?? "development",
-      event_class: normalizeEventClass(fields),
-      format: formatMap[formatName] ?? "series",
-      territory: normalizeTerritory(fields.Territory),
-      evidence_tier: `tier_${tier}`,
-      confidence: normalizeConfidence(fields["Mandate Confidence"]),
-      summary,
-      verified_facts: splitLines(fields["Verified Facts"]),
-      interpretation: textValue(fields.Interpretation),
-      why_it_matters: whyItMatters,
-      action: {
-        status: normalizeActionStatus(fields["Action Route Status"]),
-        label: textValue(fields["Action Label"]) || actionStatus,
-        description: textValue(fields["Professional Action Enabled"]),
-        url: textValue(fields["Action URL"]) || undefined,
-        evidence: textValue(fields["Action Evidence"]) || undefined,
-      },
-      sources,
-      related_record_ids: [] as string[],
-      first_captured: textValue(fields["First Captured"]) || date,
-      last_verified: textValue(fields["Verification Date"]) || date,
-      locked: accessLevel === "paid",
-      access_level: accessLevel,
-      is_published: true,
-      published_at: textValue(fields["Published At"]) || new Date().toISOString(),
-      wedge: selectName(fields.Wedge) || null,
-      updated_at: new Date().toISOString(),
-    },
-    buyerIds: availableBuyers.map((buyer) => buyer!.id),
-  };
-}
-
-Deno.serve(async (request) => {
-  if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
-
-  const startedAt = new Date().toISOString();
-  let syncRunId: string | undefined;
 
   try {
-    const syncSecret = requiredEnv("SYNC_SECRET");
-    if (request.headers.get("x-sync-secret") !== syncSecret) {
-      return json({ error: "Unauthorized" }, 401);
-    }
-
-    const airtableToken = requiredEnv("AIRTABLE_PAT");
-    const baseId = requiredEnv("AIRTABLE_BASE_ID");
-    const recordsTableId = requiredEnv("AIRTABLE_RECORDS_TABLE_ID");
-    const buyersTableId = requiredEnv("AIRTABLE_BUYERS_TABLE_ID");
-    const supabaseUrl = requiredEnv("SUPABASE_URL");
-    const serviceRoleKey = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { persistSession: false },
-    });
-
-    const requestUrl = new URL(request.url);
-    const dryRun = requestUrl.searchParams.get("dry_run") === "true";
-    const includeVerified = dryRun
-      && requestUrl.searchParams.get("include_verified") === "true";
-
-    const { data: run, error: runError } = await supabase
-      .from("sync_runs")
-      .insert({ source: "airtable", dry_run: dryRun, started_at: startedAt })
-      .select("id")
-      .single();
-    if (runError) throw runError;
-    syncRunId = run.id;
-
-    const recordFormula = includeVerified
-      ? 'OR({Website Ready}=1,{Status}="Verified")'
-      : "{Website Ready}=1";
-    const buyerFormula = includeVerified ? undefined : "{Publish on Site}=1";
-
-    const [airtableBuyers, airtableRecords] = await Promise.all([
-      fetchAirtableTable(baseId, buyersTableId, airtableToken, buyerFormula),
-      fetchAirtableTable(baseId, recordsTableId, airtableToken, recordFormula),
-    ]);
-
-    const buyerValidationErrors: ValidationError[] = [];
-    const recordValidationErrors: ValidationError[] = [];
-    const mappedBuyers = airtableBuyers
-      .map((record) => mapBuyer(record, buyerValidationErrors))
-      .filter((buyer): buyer is NonNullable<typeof buyer> => Boolean(buyer));
-    const buyersByAirtableId = new Map(
-      mappedBuyers.map((buyer) => [buyer.airtable_record_id, buyer]),
-    );
-
-    const mappedRecords = airtableRecords
-      .map((record) => mapDealRecord(record, buyersByAirtableId, recordValidationErrors))
-      .filter((record): record is NonNullable<typeof record> => Boolean(record));
-
-    for (const record of mappedRecords) {
-      for (const buyerId of record.buyerIds) {
-        const buyer = mappedBuyers.find((candidate) => candidate.id === buyerId);
-        if (!buyer) continue;
-        if (!buyer.primary_formats.includes(record.row.format)) {
-          buyer.primary_formats.push(record.row.format);
-        }
-        buyer.activity_timeline.push({ date: record.row.date, event: record.row.headline });
-      }
-    }
-    for (const buyer of mappedBuyers) {
-      buyer.activity_timeline.sort((a, b) => b.date.localeCompare(a.date));
-      buyer.recent_activity = buyer.activity_timeline[0]?.event ?? "";
-    }
-
-    if (dryRun) {
-      await supabase.from("sync_runs").update({
-        completed_at: new Date().toISOString(),
-        buyers_fetched: airtableBuyers.length,
-        records_fetched: airtableRecords.length,
-        validation_errors: [...recordValidationErrors, ...buyerValidationErrors],
-      }).eq("id", syncRunId);
-
-      return json({
-        dry_run: true,
-        include_verified: includeVerified,
-        buyers_fetched: airtableBuyers.length,
-        buyers_ready: mappedBuyers.length,
-        records_fetched: airtableRecords.length,
-        records_ready: mappedRecords.length,
-        record_validation_errors: recordValidationErrors,
-        buyer_validation_errors: buyerValidationErrors,
+    // Auth check
+    const syncSecret = Deno.env.get("SYNC_SECRET");
+    const providedSecret = req.headers.get("x-sync-secret");
+    if (!syncSecret || !providedSecret || providedSecret !== syncSecret) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    if (recordValidationErrors.length > 0 || buyerValidationErrors.length > 0) {
-      await supabase.from("sync_runs").update({
+    // Parse params
+    const url = new URL(req.url);
+    const dryRun = url.searchParams.get("dry_run") === "true";
+    const includeVerified = url.searchParams.get("include_verified") === "true";
+
+    // include_verified only allowed in dry-run mode
+    if (includeVerified && !dryRun) {
+      return new Response(
+        JSON.stringify({ error: "include_verified is only allowed in dry_run mode" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Environment
+    const pat = Deno.env.get("AIRTABLE_PAT");
+    const baseId = Deno.env.get("AIRTABLE_BASE_ID");
+    const recordsTableId = Deno.env.get("AIRTABLE_RECORDS_TABLE_ID");
+    const buyersTableId = Deno.env.get("AIRTABLE_BUYERS_TABLE_ID");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!pat || !baseId || !recordsTableId || !buyersTableId || !supabaseUrl || !supabaseServiceKey) {
+      return new Response(
+        JSON.stringify({ error: "Missing environment configuration" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const startedAt = new Date().toISOString();
+
+    // ─── Fetch from Airtable ────────────────────────────────────────────────
+    const recordsFilter = (includeVerified && dryRun)
+      ? `OR({Website Ready}=1,{Status}="Verified")`
+      : `{Website Ready}=1`;
+
+    let airtableBuyers: AirtableRecord[] = [];
+    let airtableRecords: AirtableRecord[] = [];
+    const fetchErrors: string[] = [];
+
+    try {
+      airtableRecords = await fetchAllAirtableRecords(baseId, recordsTableId, pat, recordsFilter);
+    } catch (e) {
+      fetchErrors.push(`Records (${recordsTableId}): ${e instanceof Error ? e.message : String(e)}`);
+    }
+
+    if (includeVerified && dryRun) {
+      // Preview mode: fetch ALL buyers linked from the fetched records, ignoring Publish on Site
+      const linkedBuyerIds = new Set<string>();
+      for (const r of airtableRecords) {
+        const links = r.fields["Buyer"] as string[] | undefined;
+        if (links) links.forEach(id => linkedBuyerIds.add(id));
+      }
+      if (linkedBuyerIds.size > 0) {
+        // Fetch buyers by record ID using OR(RECORD_ID()=...) formula
+        const idClauses = [...linkedBuyerIds].map(id => `RECORD_ID()="${id}"`);
+        const buyerFormula = idClauses.length === 1 ? idClauses[0] : `OR(${idClauses.join(",")})`;
+        try {
+          airtableBuyers = await fetchAllAirtableRecords(baseId, buyersTableId, pat, buyerFormula);
+        } catch (e) {
+          fetchErrors.push(`Buyers (${buyersTableId}): ${e instanceof Error ? e.message : String(e)}`);
+        }
+      }
+    } else {
+      // Production mode: only buyers with Publish on Site checked
+      try {
+        airtableBuyers = await fetchAllAirtableRecords(baseId, buyersTableId, pat, `{Publish on Site}=1`);
+      } catch (e) {
+        fetchErrors.push(`Buyers (${buyersTableId}): ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+
+    if (fetchErrors.length > 0 && airtableBuyers.length === 0 && airtableRecords.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Airtable fetch failed", details: fetchErrors }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ─── Build buyer slug map ─────────────────────────────────────────────
+    const buyerAirtableIdToSlug = new Map<string, string>();
+    for (const b of airtableBuyers) {
+      const slug = asString(b.fields["Public Slug"]);
+      if (slug) buyerAirtableIdToSlug.set(b.id, slug);
+    }
+
+    // ─── Validate ────────────────────────────────────────────────────────────
+    const recordValidationErrors: ValidationError[] = [];
+    const buyerValidationErrors: ValidationError[] = [];
+
+    for (const b of airtableBuyers) {
+      buyerValidationErrors.push(...validateBuyer(b));
+    }
+
+    for (const r of airtableRecords) {
+      recordValidationErrors.push(...validateRecord(r));
+    }
+
+    // Determine valid buyers (no validation errors)
+    const invalidBuyerIds = new Set(buyerValidationErrors.map(e => e.airtableId));
+    const validBuyerAirtableIds = new Set(
+      airtableBuyers.filter(b => !invalidBuyerIds.has(b.id)).map(b => b.id)
+    );
+
+    // Determine valid records: own fields pass AND at least one linked valid buyer
+    const invalidRecordIds = new Set(recordValidationErrors.map(e => e.airtableId));
+    const validRecords = airtableRecords.filter(r => {
+      if (invalidRecordIds.has(r.id)) return false;
+      const buyerLinks = (r.fields["Buyer"] as string[] | undefined) || [];
+      return buyerLinks.some(bid => validBuyerAirtableIds.has(bid));
+    });
+    const validBuyers = airtableBuyers.filter(b => !invalidBuyerIds.has(b.id));
+
+    // Combined errors for logging
+    const allValidationErrors = [...recordValidationErrors, ...buyerValidationErrors];
+
+    // ─── Dry-run response ────────────────────────────────────────────────────
+    if (dryRun) {
+      // Log the dry run
+      await supabase.from("sync_runs").insert({
+        source: "airtable",
+        dry_run: true,
+        started_at: startedAt,
         completed_at: new Date().toISOString(),
         buyers_fetched: airtableBuyers.length,
         records_fetched: airtableRecords.length,
-        validation_errors: [...recordValidationErrors, ...buyerValidationErrors],
-        error_message: "Publication validation failed; no records were written.",
-      }).eq("id", syncRunId);
-      return json({
-        error: "Publication validation failed",
-        record_validation_errors: recordValidationErrors,
-        buyer_validation_errors: buyerValidationErrors,
-      }, 422);
+        buyers_upserted: 0,
+        records_upserted: 0,
+        buyers_unpublished: 0,
+        records_unpublished: 0,
+        validation_errors: allValidationErrors,
+      });
+
+      return new Response(
+        JSON.stringify({
+          dry_run: true,
+          include_verified: includeVerified,
+          buyers_fetched: airtableBuyers.length,
+          buyers_ready: validBuyers.length,
+          records_fetched: airtableRecords.length,
+          records_ready: validRecords.length,
+          record_validation_errors: recordValidationErrors,
+          buyer_validation_errors: buyerValidationErrors,
+          fetch_errors: fetchErrors.length > 0 ? fetchErrors : undefined,
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    if (mappedBuyers.length > 0) {
-      const { error } = await supabase.from("buyers").upsert(mappedBuyers, { onConflict: "id" });
-      if (error) throw error;
+    // ─── Production write: fail if validation errors exist ───────────────────
+    if (allValidationErrors.length > 0) {
+      await supabase.from("sync_runs").insert({
+        source: "airtable",
+        dry_run: false,
+        started_at: startedAt,
+        completed_at: new Date().toISOString(),
+        buyers_fetched: airtableBuyers.length,
+        records_fetched: airtableRecords.length,
+        buyers_upserted: 0,
+        records_upserted: 0,
+        buyers_unpublished: 0,
+        records_unpublished: 0,
+        validation_errors: allValidationErrors,
+        error_message: "Validation failed; no records written.",
+      });
+
+      return new Response(
+        JSON.stringify({
+          error: "Validation failed",
+          record_validation_errors: recordValidationErrors,
+          buyer_validation_errors: buyerValidationErrors,
+        }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
-    if (mappedRecords.length > 0) {
-      const { error } = await supabase.from("records").upsert(
-        mappedRecords.map((record) => record.row),
-        { onConflict: "id" },
-      );
-      if (error) throw error;
 
-      const recordIds = mappedRecords.map((record) => record.row.id);
-      const { error: deleteLinksError } = await supabase
-        .from("record_buyers")
-        .delete()
-        .in("record_id", recordIds);
-      if (deleteLinksError) throw deleteLinksError;
+    // ─── Upsert buyers ────────────────────────────────────────────────────────
+    let buyersUpserted = 0;
+    for (const b of validBuyers) {
+      const f = b.fields;
+      const slug = asString(f["Public Slug"]);
 
-      const links = mappedRecords.flatMap((record) =>
-        record.buyerIds.map((buyerId, index) => ({
-          record_id: record.row.id,
-          buyer_id: buyerId,
-          is_primary: index === 0,
-        }))
-      );
-      if (links.length > 0) {
-        const { error: linksError } = await supabase.from("record_buyers").insert(links);
-        if (linksError) throw linksError;
+      const buyerRow = {
+        id: slug,
+        airtable_record_id: b.id,
+        name: asString(f["Buyer Name"]),
+        type: mapBuyerType(asString(f["Buyer Type"])),
+        description: asString(f["Public Description"]),
+        primary_formats: asStringArray(f["Primary Formats"]).map(mapFormat),
+        territory: mapTerritory(asString(f["HQ / Territory"])),
+        current_mandate: asString(f["Current Mandate"]),
+        mandate_confidence: mapConfidence(asString(f["Mandate Confidence"])),
+        mandate_evidence: asStringArray(f["Mandate Evidence"]),
+        contact_route: asString(f["Contact Route"]) || null,
+        contact_route_url: asString(f["Contact Route URL"]) || null,
+        open_questions: asStringArray(f["Open Questions"]),
+        last_verified: asString(f["Last Verified"]) || new Date().toISOString().slice(0, 10),
+        is_published: true,
+        publish_on_site: true,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from("buyers")
+        .upsert(buyerRow, { onConflict: "id" });
+
+      if (!error) buyersUpserted++;
+    }
+
+    // ─── Upsert records ───────────────────────────────────────────────────────
+    let recordsUpserted = 0;
+    const syncedRecordSlugs: string[] = [];
+
+    for (const r of validRecords) {
+      const f = r.fields;
+      const slug = asString(f["Public Slug"]);
+      syncedRecordSlugs.push(slug);
+
+      const primarySourceUrl = asString(f["Primary Source URL"]);
+      const secondarySourceUrl = asString(f["Secondary Source URL"]);
+      const sources: { name: string; url: string; readTime: string }[] = [];
+      if (primarySourceUrl) sources.push({ name: "Primary Source", url: primarySourceUrl, readTime: "" });
+      if (secondarySourceUrl) sources.push({ name: "Secondary Source", url: secondarySourceUrl, readTime: "" });
+
+      const actionEnabled = f["Professional Action Enabled"] as boolean | undefined;
+      const action = {
+        status: mapActionStatus(asString(f["Action Route Status"])),
+        label: asString(f["Action Label"]) || "",
+        description: "",
+        url: actionEnabled ? asString(f["Action URL"]) || undefined : undefined,
+        evidence: asString(f["Action Evidence"]) || undefined,
+      };
+
+      // Resolve buyer links
+      const buyerLinks = (f["Buyer"] as string[]) || [];
+      const primaryBuyerSlug = buyerLinks.length > 0 ? buyerAirtableIdToSlug.get(buyerLinks[0]) || "" : "";
+
+      const recordRow = {
+        id: slug,
+        airtable_record_id: r.id,
+        date: asString(f["Official Announcement Date"]),
+        buyer: "", // will be set from buyer name lookup below
+        buyer_id: primaryBuyerSlug,
+        headline: asString(f["Record Name"]),
+        record_type: mapRecordType(asString(f["Event Class"])),
+        event_class: mapEventClass(asString(f["Record Type"]), asString(f["Wedge"])),
+        format: mapFormat(asString(f["Format"])),
+        territory: mapTerritory(asString(f["Territory"])),
+        evidence_tier: mapEvidenceTier(asString(f["Highest Evidence Tier"])),
+        confidence: mapConfidence(asString(f["Mandate Confidence"])),
+        summary: asString(f["Public Summary"]),
+        verified_facts: asStringArray(f["Verified Facts"]),
+        interpretation: asString(f["Interpretation"]),
+        why_it_matters: asString(f["Why It Matters"]),
+        action,
+        sources,
+        first_captured: asString(f["First Captured"]) || new Date().toISOString().slice(0, 10),
+        last_verified: asString(f["Verification Date"]) || new Date().toISOString().slice(0, 10),
+        access_level: (asString(f["Access Level"]) || "free").toLowerCase() === "paid" ? "paid" : "free",
+        published_at: asString(f["Published At"]) || new Date().toISOString(),
+        wedge: asString(f["Wedge"]) || null,
+        is_published: true,
+        locked: false,
+        updated_at: new Date().toISOString(),
+      };
+
+      // Resolve buyer name from already-upserted buyers
+      const buyerForName = validBuyers.find(vb => asString(vb.fields["Public Slug"]) === primaryBuyerSlug);
+      if (buyerForName) {
+        recordRow.buyer = asString(buyerForName.fields["Buyer Name"]);
+      }
+
+      const { error } = await supabase
+        .from("records")
+        .upsert(recordRow, { onConflict: "id" });
+
+      if (!error) recordsUpserted++;
+
+      // ─── Rebuild record_buyers links ─────────────────────────────────────
+      if (!error) {
+        await supabase.from("record_buyers").delete().eq("record_id", slug);
+        const links = buyerLinks
+          .map((airtableId, idx) => ({
+            record_id: slug,
+            buyer_id: buyerAirtableIdToSlug.get(airtableId) || "",
+            is_primary: idx === 0,
+          }))
+          .filter((l) => l.buyer_id);
+        if (links.length > 0) {
+          await supabase.from("record_buyers").insert(links);
+        }
       }
     }
 
-    const { data: existingRecords, error: existingRecordsError } = await supabase
-      .from("records")
-      .select("airtable_record_id")
-      .not("airtable_record_id", "is", null);
-    if (existingRecordsError) throw existingRecordsError;
-    const activeRecordIds = new Set(mappedRecords.map((record) => record.row.airtable_record_id));
-    const staleRecordIds = (existingRecords ?? [])
-      .map((record) => record.airtable_record_id as string)
-      .filter((id) => !activeRecordIds.has(id));
-    if (staleRecordIds.length > 0) {
-      const { error } = await supabase.from("records")
-        .update({ is_published: false, updated_at: new Date().toISOString() })
-        .in("airtable_record_id", staleRecordIds);
-      if (error) throw error;
-    }
+    // ─── Unpublish rows no longer passing the publication gate ───────────────
+    const syncedBuyerSlugs = validBuyers.map(b => asString(b.fields["Public Slug"]));
 
-    const { data: existingBuyers, error: existingBuyersError } = await supabase
+    // Buyers: mark is_published=false for previously-synced buyers no longer in the batch
+    const { data: existingPublishedBuyers } = await supabase
       .from("buyers")
-      .select("airtable_record_id")
+      .select("id")
+      .eq("is_published", true)
       .not("airtable_record_id", "is", null);
-    if (existingBuyersError) throw existingBuyersError;
-    const activeBuyerIds = new Set(mappedBuyers.map((buyer) => buyer.airtable_record_id));
-    const staleBuyerIds = (existingBuyers ?? [])
-      .map((buyer) => buyer.airtable_record_id as string)
-      .filter((id) => !activeBuyerIds.has(id));
-    if (staleBuyerIds.length > 0) {
-      const { error } = await supabase.from("buyers")
-        .update({ is_published: false, updated_at: new Date().toISOString() })
-        .in("airtable_record_id", staleBuyerIds);
-      if (error) throw error;
+
+    let buyersUnpublished = 0;
+    if (existingPublishedBuyers) {
+      const toUnpublish = existingPublishedBuyers
+        .filter((b: { id: string }) => !syncedBuyerSlugs.includes(b.id));
+      if (toUnpublish.length > 0) {
+        const { error } = await supabase
+          .from("buyers")
+          .update({ is_published: false, updated_at: new Date().toISOString() })
+          .in("id", toUnpublish.map((b: { id: string }) => b.id));
+        if (!error) buyersUnpublished = toUnpublish.length;
+      }
     }
 
-    await supabase.from("sync_runs").update({
+    // Records: mark is_published=false for previously-synced records no longer in the batch
+    const { data: existingPublishedRecords } = await supabase
+      .from("records")
+      .select("id")
+      .eq("is_published", true)
+      .not("airtable_record_id", "is", null);
+
+    let recordsUnpublished = 0;
+    if (existingPublishedRecords) {
+      const toUnpublish = existingPublishedRecords
+        .filter((r: { id: string }) => !syncedRecordSlugs.includes(r.id));
+      if (toUnpublish.length > 0) {
+        const { error } = await supabase
+          .from("records")
+          .update({ is_published: false, updated_at: new Date().toISOString() })
+          .in("id", toUnpublish.map((r: { id: string }) => r.id));
+        if (!error) recordsUnpublished = toUnpublish.length;
+      }
+    }
+
+    // ─── Log sync run ────────────────────────────────────────────────────────
+    await supabase.from("sync_runs").insert({
+      source: "airtable",
+      dry_run: false,
+      started_at: startedAt,
       completed_at: new Date().toISOString(),
       buyers_fetched: airtableBuyers.length,
       records_fetched: airtableRecords.length,
-      buyers_upserted: mappedBuyers.length,
-      records_upserted: mappedRecords.length,
-      buyers_unpublished: staleBuyerIds.length,
-      records_unpublished: staleRecordIds.length,
+      buyers_upserted: buyersUpserted,
+      records_upserted: recordsUpserted,
+      buyers_unpublished: buyersUnpublished,
+      records_unpublished: recordsUnpublished,
       validation_errors: [],
-    }).eq("id", syncRunId);
-
-    return json({
-      success: true,
-      buyers_fetched: airtableBuyers.length,
-      records_fetched: airtableRecords.length,
-      buyers_upserted: mappedBuyers.length,
-      records_upserted: mappedRecords.length,
-      buyers_unpublished: staleBuyerIds.length,
-      records_unpublished: staleRecordIds.length,
     });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    if (syncRunId) {
-      try {
-        const supabaseUrl = requiredEnv("SUPABASE_URL");
-        const serviceRoleKey = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
-        const supabase = createClient(supabaseUrl, serviceRoleKey);
-        await supabase.from("sync_runs").update({
-          completed_at: new Date().toISOString(),
-          error_message: message,
-        }).eq("id", syncRunId);
-      } catch {
-        // Preserve the original failure response if run logging also fails.
-      }
-    }
-    return json({ error: message }, 500);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        buyers_fetched: airtableBuyers.length,
+        records_fetched: airtableRecords.length,
+        buyers_upserted: buyersUpserted,
+        records_upserted: recordsUpserted,
+        buyers_unpublished: buyersUnpublished,
+        records_unpublished: recordsUnpublished,
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return new Response(
+      JSON.stringify({ error: message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 });
