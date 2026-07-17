@@ -1,16 +1,17 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, LayoutGrid, List, Clock, X, Lock } from 'lucide-react';
+import { Search, LayoutGrid, List, Clock, X, Lock, SlidersHorizontal } from 'lucide-react';
 import { useRecords, useNewThisWeekCount, useUniqueBuyerNames } from '../data/useDataService';
 import { useData } from '../data/DataProvider';
 import { pluralize } from '../data/service';
 import { RecordCard } from '../components/RecordCard';
 import { RecordClassBadge, EvidenceBadge, ConfidenceBadge, ActionRouteBadge } from '../components/Badges';
 import { PrototypeNotice } from '../components/PrototypeNotice';
-import type { RecordType, RecordClass, Format, EvidenceTier, Confidence, Territory, ActionRouteStatus } from '../data/types';
+import type { RecordType, Format, EvidenceTier, Confidence, Territory, ActionRouteStatus } from '../data/types';
 
 type ViewMode = 'cards' | 'table';
 type SortMode = 'newest' | 'confidence' | 'buyer';
+type BoardView = 'deals' | 'signals';
 
 const confidenceOrder: Record<Confidence, number> = { high: 3, medium: 2, low: 1 };
 
@@ -23,9 +24,10 @@ export function DealBoardPage() {
   const [search, setSearch] = useState('');
   const [view, setView] = useState<ViewMode>('cards');
   const [sort, setSort] = useState<SortMode>('newest');
+  const [activeBoardView, setActiveBoardView] = useState<BoardView>('deals');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filterBuyer, setFilterBuyer] = useState('');
   const [filterType, setFilterType] = useState<RecordType | ''>('');
-  const [filterRecordClass, setFilterRecordClass] = useState<RecordClass | ''>('');
   const [filterFormat, setFilterFormat] = useState<Format | ''>('');
   const [filterEvidence, setFilterEvidence] = useState<EvidenceTier | ''>('');
   const [filterConfidence, setFilterConfidence] = useState<Confidence | ''>('');
@@ -34,13 +36,13 @@ export function DealBoardPage() {
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
 
-  const hasActiveFilters = search || filterBuyer || filterType || filterRecordClass || filterFormat || filterEvidence || filterConfidence || filterTerritory || filterAction || filterDateFrom || filterDateTo;
+  const hasActiveFilters = activeBoardView !== 'deals' || search || filterBuyer || filterType || filterFormat || filterEvidence || filterConfidence || filterTerritory || filterAction || filterDateFrom || filterDateTo;
 
   const clearFilters = () => {
     setSearch('');
+    setActiveBoardView('deals');
     setFilterBuyer('');
     setFilterType('');
-    setFilterRecordClass('');
     setFilterFormat('');
     setFilterEvidence('');
     setFilterConfidence('');
@@ -51,7 +53,11 @@ export function DealBoardPage() {
   };
 
   const filtered = useMemo(() => {
-    let results = allRecords;
+    let results = allRecords.filter(record =>
+      activeBoardView === 'signals'
+        ? record.recordClass === 'developing_signal'
+        : record.recordClass === 'confirmed_deal'
+    );
 
     if (search) {
       const q = search.toLowerCase();
@@ -64,7 +70,6 @@ export function DealBoardPage() {
 
     if (filterBuyer) results = results.filter(r => r.buyer === filterBuyer);
     if (filterType) results = results.filter(r => r.recordType === filterType);
-    if (filterRecordClass) results = results.filter(r => r.recordClass === filterRecordClass);
     if (filterFormat) results = results.filter(r => r.format === filterFormat);
     if (filterEvidence) results = results.filter(r => r.evidenceTier === filterEvidence);
     if (filterConfidence) results = results.filter(r => r.confidence === filterConfidence);
@@ -80,7 +85,7 @@ export function DealBoardPage() {
     }
 
     return results;
-  }, [allRecords, search, filterBuyer, filterType, filterRecordClass, filterFormat, filterEvidence, filterConfidence, filterTerritory, filterAction, filterDateFrom, filterDateTo, sort]);
+  }, [allRecords, activeBoardView, search, filterBuyer, filterType, filterFormat, filterEvidence, filterConfidence, filterTerritory, filterAction, filterDateFrom, filterDateTo, sort]);
 
   const updatedLabel = latestVerifiedDate
     ? `Updated ${new Date(latestVerifiedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
@@ -146,26 +151,30 @@ export function DealBoardPage() {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Primary filters */}
       <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex items-center gap-2 mr-1">
+          <span className="text-xs text-ink-500">Record class</span>
+          <div className="inline-flex rounded border border-ink-200 bg-white p-0.5">
+            <button
+              type="button"
+              onClick={() => setActiveBoardView('deals')}
+              className={`px-2.5 py-1 text-xs rounded transition-colors ${activeBoardView === 'deals' ? 'bg-ink-900 text-cream-50' : 'text-ink-600 hover:text-ink-900'}`}
+            >
+              Confirmed deals
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveBoardView('signals')}
+              className={`px-2.5 py-1 text-xs rounded transition-colors ${activeBoardView === 'signals' ? 'bg-ink-900 text-cream-50' : 'text-ink-600 hover:text-ink-900'}`}
+            >
+              Signals
+            </button>
+          </div>
+        </div>
         <FilterSelect label="Buyer" value={filterBuyer} onChange={setFilterBuyer} options={[
           { value: '', label: 'All buyers' },
           ...buyerNames.map(name => ({ value: name, label: name })),
-        ]} />
-        <FilterSelect label="Type" value={filterType} onChange={v => setFilterType(v as RecordType | '')} options={[
-          { value: '', label: 'All types' },
-          { value: 'acquisition', label: 'Acquisition' },
-          { value: 'commission', label: 'Commission' },
-          { value: 'fund_launch', label: 'Fund Launch' },
-          { value: 'partnership', label: 'Partnership' },
-          { value: 'license', label: 'License' },
-          { value: 'development', label: 'Development' },
-        ]} />
-        <FilterSelect label="Record class" value={filterRecordClass} onChange={v => setFilterRecordClass(v as RecordClass | '')} options={[
-          { value: '', label: 'All classes' },
-          { value: 'confirmed_deal', label: 'Confirmed Deal' },
-          { value: 'developing_signal', label: 'Developing Signal' },
-          { value: 'context', label: 'Context' },
         ]} />
         <FilterSelect label="Format" value={filterFormat} onChange={v => setFilterFormat(v as Format | '')} options={[
           { value: '', label: 'All formats' },
@@ -177,6 +186,28 @@ export function DealBoardPage() {
           { value: 'fast_channel', label: 'FAST Channel' },
           { value: 'unscripted', label: 'Unscripted' },
         ]} />
+        <button
+          type="button"
+          onClick={() => setShowAdvancedFilters(current => !current)}
+          aria-expanded={showAdvancedFilters}
+          className={`inline-flex items-center gap-1.5 rounded border px-2.5 py-1.5 text-xs transition-colors ${showAdvancedFilters ? 'border-burgundy-300 bg-burgundy-50 text-burgundy-800' : 'border-ink-200 bg-white text-ink-700 hover:border-ink-300'}`}
+        >
+          <SlidersHorizontal size={13} />
+          {showAdvancedFilters ? 'Hide advanced filters' : 'Advanced filters'}
+        </button>
+      </div>
+
+      {showAdvancedFilters && (
+        <div className="flex flex-wrap items-center gap-2 mb-4 rounded-lg border border-ink-100 bg-cream-50 p-3">
+          <FilterSelect label="Type" value={filterType} onChange={v => setFilterType(v as RecordType | '')} options={[
+            { value: '', label: 'All types' },
+            { value: 'acquisition', label: 'Acquisition' },
+            { value: 'commission', label: 'Commission' },
+            { value: 'fund_launch', label: 'Fund Launch' },
+            { value: 'partnership', label: 'Partnership' },
+            { value: 'license', label: 'License' },
+            { value: 'development', label: 'Development' },
+          ]} />
         <FilterSelect label="Evidence" value={filterEvidence} onChange={v => setFilterEvidence(v as EvidenceTier | '')} options={[
           { value: '', label: 'All tiers' },
           { value: 'tier_1', label: 'Tier 1' },
@@ -226,11 +257,15 @@ export function DealBoardPage() {
             aria-label="Date to"
           />
         </div>
-      </div>
+        </div>
+      )}
 
       {/* Active filter indicator + clear */}
       <div className="flex items-center justify-between mb-4">
-        <p className="text-xs text-ink-500">{filtered.length} {pluralize(filtered.length, 'record')}</p>
+        <p className="text-xs text-ink-500">
+          {filtered.length} {pluralize(filtered.length, 'record')}
+          <span className="ml-1">in {activeBoardView === 'deals' ? 'confirmed deals' : 'signals'}</span>
+        </p>
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
