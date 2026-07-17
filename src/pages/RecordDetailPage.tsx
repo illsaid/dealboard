@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, CheckCircle, AlertTriangle, Lock } from 'lucide-react';
 import { useAccessibleRecordById, useBuyerById, useBuyers } from '../data/useDataService';
 import { useData } from '../data/DataProvider';
-import { RecordTypeBadge, EventClassBadge, FormatBadge, EvidenceBadge, ConfidenceBadge, ActionRouteBadge } from '../components/Badges';
+import { RecordTypeBadge, RecordClassBadge, StrategicTagBadge, FormatBadge, EvidenceBadge, ConfidenceBadge, ActionRouteBadge } from '../components/Badges';
 
 export function RecordDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -48,7 +48,8 @@ export function RecordDetailPage() {
       <header className="mb-8">
         <div className="flex flex-wrap gap-1.5 mb-3">
           <RecordTypeBadge type={record.recordType} />
-          <EventClassBadge eventClass={record.eventClass} />
+          <RecordClassBadge recordClass={record.recordClass} />
+          {(record.strategicTags ?? []).map(tag => <StrategicTagBadge key={tag} tag={tag} />)}
           <FormatBadge format={record.format} />
           <EvidenceBadge tier={record.evidenceTier} />
           <ConfidenceBadge confidence={record.confidence} />
@@ -210,7 +211,7 @@ export function RecordDetailPage() {
             {relatedRecords.map(r => r && (
               <Link key={r.id} to={`/deals/${r.id}`} className="block border border-ink-100 rounded-lg p-3 bg-white hover:border-ink-200 transition-colors">
                 <div className="flex items-center gap-2 mb-1">
-                  <EventClassBadge eventClass={r.eventClass} />
+                  <RecordClassBadge recordClass={r.recordClass} />
                   <span className="text-xs text-ink-500">{r.date}</span>
                 </div>
                 <p className="text-sm font-medium text-ink-800">{r.headline}</p>

@@ -1,12 +1,13 @@
 export type RecordType = 'acquisition' | 'commission' | 'fund_launch' | 'partnership' | 'license' | 'development';
-export type EventClass = 'confirmed_deal' | 'developing_signal' | 'legacy_crossover';
+export type RecordClass = 'confirmed_deal' | 'developing_signal' | 'context';
+export type StrategicTag = 'legacy_crossover' | 'vertical' | 'creator_led' | 'fast' | 'brand_funded';
 export type Format = 'microdrama' | 'short_form' | 'feature' | 'series' | 'unscripted' | 'branded' | 'fast_channel' | 'interactive';
 export type Territory = 'global' | 'north_america' | 'europe' | 'asia_pacific' | 'latin_america' | 'middle_east';
 export type EvidenceTier = 'tier_1' | 'tier_2' | 'tier_3' | 'tier_4';
 export type Confidence = 'high' | 'medium' | 'low';
 export type BuyerType = 'microdrama_platform' | 'creator_studio' | 'brand_funded' | 'fast_channel' | 'digital_platform' | 'legacy_studio' | 'streamer' | 'financier';
 
-export type ActionRouteStatus = 'verified' | 'likely' | 'none';
+export type ActionRouteStatus = 'not_researched' | 'underway' | 'verified' | 'likely' | 'researched_none';
 
 export interface ProfessionalAction {
   status: ActionRouteStatus;
@@ -23,7 +24,8 @@ export interface DealRecord {
   buyerId: string;
   headline: string;
   recordType: RecordType;
-  eventClass: EventClass;
+  recordClass: RecordClass;
+  strategicTags?: StrategicTag[];
   format: Format;
   territory: Territory;
   evidenceTier: EvidenceTier;

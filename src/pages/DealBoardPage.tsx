@@ -5,9 +5,9 @@ import { useRecords, useNewThisWeekCount, useUniqueBuyerNames } from '../data/us
 import { useData } from '../data/DataProvider';
 import { pluralize } from '../data/service';
 import { RecordCard } from '../components/RecordCard';
-import { EventClassBadge, EvidenceBadge, ConfidenceBadge, ActionRouteBadge } from '../components/Badges';
+import { RecordClassBadge, EvidenceBadge, ConfidenceBadge, ActionRouteBadge } from '../components/Badges';
 import { PrototypeNotice } from '../components/PrototypeNotice';
-import type { RecordType, EventClass, Format, EvidenceTier, Confidence, Territory, ActionRouteStatus } from '../data/types';
+import type { RecordType, RecordClass, Format, EvidenceTier, Confidence, Territory, ActionRouteStatus } from '../data/types';
 
 type ViewMode = 'cards' | 'table';
 type SortMode = 'newest' | 'confidence' | 'buyer';
@@ -25,7 +25,7 @@ export function DealBoardPage() {
   const [sort, setSort] = useState<SortMode>('newest');
   const [filterBuyer, setFilterBuyer] = useState('');
   const [filterType, setFilterType] = useState<RecordType | ''>('');
-  const [filterEventClass, setFilterEventClass] = useState<EventClass | ''>('');
+  const [filterRecordClass, setFilterRecordClass] = useState<RecordClass | ''>('');
   const [filterFormat, setFilterFormat] = useState<Format | ''>('');
   const [filterEvidence, setFilterEvidence] = useState<EvidenceTier | ''>('');
   const [filterConfidence, setFilterConfidence] = useState<Confidence | ''>('');
@@ -34,13 +34,13 @@ export function DealBoardPage() {
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
 
-  const hasActiveFilters = search || filterBuyer || filterType || filterEventClass || filterFormat || filterEvidence || filterConfidence || filterTerritory || filterAction || filterDateFrom || filterDateTo;
+  const hasActiveFilters = search || filterBuyer || filterType || filterRecordClass || filterFormat || filterEvidence || filterConfidence || filterTerritory || filterAction || filterDateFrom || filterDateTo;
 
   const clearFilters = () => {
     setSearch('');
     setFilterBuyer('');
     setFilterType('');
-    setFilterEventClass('');
+    setFilterRecordClass('');
     setFilterFormat('');
     setFilterEvidence('');
     setFilterConfidence('');
@@ -64,7 +64,7 @@ export function DealBoardPage() {
 
     if (filterBuyer) results = results.filter(r => r.buyer === filterBuyer);
     if (filterType) results = results.filter(r => r.recordType === filterType);
-    if (filterEventClass) results = results.filter(r => r.eventClass === filterEventClass);
+    if (filterRecordClass) results = results.filter(r => r.recordClass === filterRecordClass);
     if (filterFormat) results = results.filter(r => r.format === filterFormat);
     if (filterEvidence) results = results.filter(r => r.evidenceTier === filterEvidence);
     if (filterConfidence) results = results.filter(r => r.confidence === filterConfidence);
@@ -80,7 +80,7 @@ export function DealBoardPage() {
     }
 
     return results;
-  }, [allRecords, search, filterBuyer, filterType, filterEventClass, filterFormat, filterEvidence, filterConfidence, filterTerritory, filterAction, filterDateFrom, filterDateTo, sort]);
+  }, [allRecords, search, filterBuyer, filterType, filterRecordClass, filterFormat, filterEvidence, filterConfidence, filterTerritory, filterAction, filterDateFrom, filterDateTo, sort]);
 
   const updatedLabel = latestVerifiedDate
     ? `Updated ${new Date(latestVerifiedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
@@ -161,11 +161,11 @@ export function DealBoardPage() {
           { value: 'license', label: 'License' },
           { value: 'development', label: 'Development' },
         ]} />
-        <FilterSelect label="Event" value={filterEventClass} onChange={v => setFilterEventClass(v as EventClass | '')} options={[
-          { value: '', label: 'All events' },
+        <FilterSelect label="Record class" value={filterRecordClass} onChange={v => setFilterRecordClass(v as RecordClass | '')} options={[
+          { value: '', label: 'All classes' },
           { value: 'confirmed_deal', label: 'Confirmed Deal' },
           { value: 'developing_signal', label: 'Developing Signal' },
-          { value: 'legacy_crossover', label: 'Legacy Crossover' },
+          { value: 'context', label: 'Context' },
         ]} />
         <FilterSelect label="Format" value={filterFormat} onChange={v => setFilterFormat(v as Format | '')} options={[
           { value: '', label: 'All formats' },
@@ -200,9 +200,11 @@ export function DealBoardPage() {
         ]} />
         <FilterSelect label="Action route" value={filterAction} onChange={v => setFilterAction(v as ActionRouteStatus | '')} options={[
           { value: '', label: 'All routes' },
+          { value: 'not_researched', label: 'Not researched' },
+          { value: 'underway', label: 'Underway' },
           { value: 'verified', label: 'Verified route' },
           { value: 'likely', label: 'Likely route' },
-          { value: 'none', label: 'No confirmed route' },
+          { value: 'researched_none', label: 'Researched — none identified' },
         ]} />
         <div className="flex items-center gap-1.5">
           <label className="text-xs text-ink-500">From</label>
@@ -261,7 +263,7 @@ export function DealBoardPage() {
                   <th className="text-left px-3 py-2 font-semibold text-ink-700">Date</th>
                   <th className="text-left px-3 py-2 font-semibold text-ink-700">Buyer</th>
                   <th className="text-left px-3 py-2 font-semibold text-ink-700">Headline</th>
-                  <th className="text-left px-3 py-2 font-semibold text-ink-700">Event</th>
+                  <th className="text-left px-3 py-2 font-semibold text-ink-700">Class</th>
                   <th className="text-left px-3 py-2 font-semibold text-ink-700">Evidence</th>
                   <th className="text-left px-3 py-2 font-semibold text-ink-700">Confidence</th>
                   <th className="text-left px-3 py-2 font-semibold text-ink-700">Action</th>
@@ -276,7 +278,7 @@ export function DealBoardPage() {
                     <td className="px-3 py-2.5 text-ink-700 max-w-xs">
                       <span className="line-clamp-1">{record.headline}</span>
                     </td>
-                    <td className="px-3 py-2.5"><EventClassBadge eventClass={record.eventClass} /></td>
+                    <td className="px-3 py-2.5"><RecordClassBadge recordClass={record.recordClass} /></td>
                     <td className="px-3 py-2.5"><EvidenceBadge tier={record.evidenceTier} /></td>
                     <td className="px-3 py-2.5"><ConfidenceBadge confidence={record.confidence} /></td>
                     <td className="px-3 py-2.5"><ActionRouteBadge status={record.action.status} /></td>

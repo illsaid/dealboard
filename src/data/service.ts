@@ -6,10 +6,11 @@ import type {
   Confidence,
   DealRecord,
   EvidenceTier,
-  EventClass,
+  RecordClass,
   Format,
   ProfessionalAction,
   RecordType,
+  StrategicTag,
   Territory,
 } from './types';
 import { records as demonstrationRecords } from './records';
@@ -25,7 +26,8 @@ type DatabaseRecordRow = {
   record_buyers: Array<{ buyer_id: string; is_primary: boolean }> | null;
   headline: string;
   record_type: string;
-  event_class: string;
+  record_class: string;
+  strategic_tags: string[] | null;
   format: string;
   territory: string;
   evidence_tier: string;
@@ -66,8 +68,8 @@ let dataMode: 'demonstration' | 'published' = 'demonstration';
 
 function mapRecord(row: DatabaseRecordRow): DealRecord {
   const action = row.action ?? {
-    status: 'none' as ActionRouteStatus,
-    label: 'No confirmed route',
+    status: 'not_researched' as ActionRouteStatus,
+    label: 'Route not researched',
     description: '',
   };
 
@@ -81,7 +83,8 @@ function mapRecord(row: DatabaseRecordRow): DealRecord {
       .map((buyer) => buyer.buyer_id),
     headline: row.headline,
     recordType: row.record_type as RecordType,
-    eventClass: row.event_class as EventClass,
+    recordClass: row.record_class as RecordClass,
+    strategicTags: (row.strategic_tags ?? []) as StrategicTag[],
     format: row.format as Format,
     territory: row.territory as Territory,
     evidenceTier: row.evidence_tier as EvidenceTier,
@@ -242,19 +245,19 @@ export function getNewThisWeekCount(): number {
 
 export function getConfirmedDeals(): DealRecord[] {
   return currentRecords()
-    .filter((record) => record.eventClass === 'confirmed_deal')
+    .filter((record) => record.recordClass === 'confirmed_deal')
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
 export function getDevelopingSignals(): DealRecord[] {
   return currentRecords()
-    .filter((record) => record.eventClass === 'developing_signal')
+    .filter((record) => record.recordClass === 'developing_signal')
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
 export function getLegacyCrossovers(): DealRecord[] {
   return currentRecords()
-    .filter((record) => record.eventClass === 'legacy_crossover')
+    .filter((record) => record.strategicTags?.includes('legacy_crossover'))
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 

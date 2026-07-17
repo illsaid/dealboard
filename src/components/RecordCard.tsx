@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Lock, ArrowRight } from 'lucide-react';
 import type { DealRecord } from '../data/types';
-import { RecordTypeBadge, EventClassBadge, FormatBadge, ConfidenceBadge, ActionRouteBadge } from './Badges';
+import { RecordTypeBadge, RecordClassBadge, StrategicTagBadge, FormatBadge, ConfidenceBadge, ActionRouteBadge } from './Badges';
 
 export function RecordCard({ record, compact = false }: { record: DealRecord; compact?: boolean }) {
   if (record.locked) {
@@ -16,7 +16,7 @@ export function RecordCard({ record, compact = false }: { record: DealRecord; co
         <div className="opacity-30 select-none" aria-hidden="true">
           <div className="flex flex-wrap gap-1.5 mb-2">
             <RecordTypeBadge type={record.recordType} />
-            <EventClassBadge eventClass={record.eventClass} />
+            <RecordClassBadge recordClass={record.recordClass} />
           </div>
           <h3 className="font-semibold text-sm text-ink-900 mb-1">{record.headline}</h3>
           <p className="text-xs text-ink-500">{record.date} &middot; {record.buyer}</p>
@@ -32,8 +32,8 @@ export function RecordCard({ record, compact = false }: { record: DealRecord; co
         className="block border border-ink-100 rounded-lg p-4 hover:border-ink-200 hover:shadow-sm transition-all bg-white"
       >
         <div className="flex flex-wrap gap-1.5 mb-2">
-          <RecordTypeBadge type={record.recordType} />
-          <EventClassBadge eventClass={record.eventClass} />
+          <RecordClassBadge recordClass={record.recordClass} />
+          {(record.strategicTags ?? []).slice(0, 2).map(tag => <StrategicTagBadge key={tag} tag={tag} />)}
           <FormatBadge format={record.format} />
         </div>
         <h3 className="font-semibold text-sm text-ink-900 mb-1 leading-snug">{record.headline}</h3>
@@ -43,9 +43,9 @@ export function RecordCard({ record, compact = false }: { record: DealRecord; co
           <span>{record.date}</span>
         </div>
         <p className="mt-2 text-xs text-ink-600 line-clamp-2">{record.whyItMatters}</p>
-        <div className="mt-2">
-          <ActionRouteBadge status={record.action.status} />
-        </div>
+        {(record.action.status === 'verified' || record.action.status === 'likely') && (
+          <div className="mt-2"><ActionRouteBadge status={record.action.status} /></div>
+        )}
       </Link>
     );
   }
@@ -54,7 +54,8 @@ export function RecordCard({ record, compact = false }: { record: DealRecord; co
     <div className="border border-ink-100 rounded-lg p-5 bg-white">
       <div className="flex flex-wrap gap-1.5 mb-3">
         <RecordTypeBadge type={record.recordType} />
-        <EventClassBadge eventClass={record.eventClass} />
+        <RecordClassBadge recordClass={record.recordClass} />
+        {(record.strategicTags ?? []).map(tag => <StrategicTagBadge key={tag} tag={tag} />)}
         <FormatBadge format={record.format} />
         <ConfidenceBadge confidence={record.confidence} />
       </div>

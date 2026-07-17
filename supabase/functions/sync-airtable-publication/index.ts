@@ -5,8 +5,11 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers":
-    "Content-Type, Authorization, X-Client-Info, Apikey, X-Sync-Secret",
+    "Content-Type, Authorization, X-Client-Info, Apikey, X-Sync-Secret, X-Pickup-Sync",
 };
+
+const PUBLIC_SYNC_TRIGGER = "publication-v1";
+const PUBLIC_SYNC_COOLDOWN_MINUTES = 5;
 
 interface AirtableRecord {
   id: string;
@@ -20,16 +23,30 @@ interface ValidationError {
   message: string;
 }
 
-// ─── Field mapping helpers ────────────────────────────────────────────────────
-
-function mapEventClass(recordType: string | undefined, wedge: string | undefined): string {
-  if (wedge === "Legacy Crossover") return "legacy_crossover";
-  if (recordType === "Confirmed Deal") return "confirmed_deal";
-  return "developing_signal";
+interface WriteError {
+  table: "buyers" | "records" | "record_buyers";
+  id: string;
+  message: string;
+  code?: string;
+  details?: string;
 }
 
-function mapRecordType(eventClass: string | undefined): string {
-  if (!eventClass) return "development";
+// ─── Field mapping helpers ────────────────────────────────────────────────────
+
+function mapRecordClass(recordClass: string | undefined): string {
+  const map: Record<string, string> = {
+    "Confirmed Deal": "confirmed_deal",
+    "Developing Signal": "developing_signal",
+    Context: "context",
+    "Active-Production Signal": "developing_signal",
+    "Mandate-Forming Signal": "developing_signal",
+    "Context-Only": "context",
+  };
+  return map[recordClass || ""] || "context";
+}
+
+function mapRecordType(transactionType: string | undefined): string {
+  if (!transactionType) return "development";
   const map: Record<string, string> = {
     "Content Order": "commission",
     "Acquisition / Licensing": "acquisition",
@@ -38,18 +55,37 @@ function mapRecordType(eventClass: string | undefined): string {
     "Brand-Funded Entertainment": "partnership",
     "Company Capital": "fund_launch",
     "Distribution Expansion": "license",
+    "Active Production": "development",
+    "Development Pact": "development",
   };
-  return map[eventClass] || "development";
+  return map[transactionType] || "development";
 }
 
 function mapActionStatus(status: string | undefined): string {
-  if (!status) return "none";
+  if (!status) return "not_researched";
   const map: Record<string, string> = {
+    "Not researched": "not_researched",
+    Underway: "underway",
+    Verified: "verified",
+    Likely: "likely",
+    "Researched — none identified": "researched_none",
+    "Researched - none identified": "researched_none",
     "Verified route": "verified",
     "Likely route": "likely",
-    "No confirmed route": "none",
+    "No confirmed route": "researched_none",
   };
-  return map[status] || "none";
+  return map[status] || "not_researched";
+}
+
+function mapStrategicTags(tags: unknown): string[] {
+  const map: Record<string, string> = {
+    "Legacy Crossover": "legacy_crossover",
+    Vertical: "vertical",
+    "Creator-led": "creator_led",
+    FAST: "fast",
+    "Brand-funded": "brand_funded",
+  };
+  return asStringArray(tags).map((tag) => map[tag]).filter(Boolean);
 }
 
 function mapEvidenceTier(tier: string | undefined): string {
@@ -59,38 +95,57 @@ function mapEvidenceTier(tier: string | undefined): string {
     "Tier 2": "tier_2",
     "Tier 3": "tier_3",
     "Tier 4": "tier_4",
+    "1 - Primary": "tier_1",
+    "2 - Corroborated": "tier_2",
+    "3 - Messy/fragmented": "tier_3",
+    "4 - Direct verification": "tier_4",
   };
   return map[tier] || "tier_3";
 }
 
 function mapConfidence(conf: string | undefined): string {
   if (!conf) return "low";
-  return conf.toLowerCase();
+  const map: Record<string, string> = {
+    "Confirmed Mandate": "high",
+    "Current Signal": "medium",
+    "Developing Signal": "low",
+    High: "high",
+    Medium: "medium",
+    Low: "low",
+  };
+  return map[conf] || "low";
 }
 
 function mapTerritory(territory: string | undefined): string {
   if (!territory) return "global";
-  const map: Record<string, string> = {
-    Global: "global",
-    "North America": "north_america",
-    Europe: "europe",
-    "Asia Pacific": "asia_pacific",
-    "Latin America": "latin_america",
-    "Middle East": "middle_east",
-  };
-  return map[territory] || "global";
+  const value = territory.toLowerCase();
+
+  if (value.includes("worldwide") || value.includes("global") || value.includes("international")) return "global";
+  if (value.includes("asia pacific") || value.includes("southeast asia") || value.includes("thailand")) return "asia_pacific";
+  if (value.includes("latin america")) return "latin_america";
+  if (value.includes("middle east")) return "middle_east";
+  if (value.includes("nordics") || value.includes("europe") || value.includes("united kingdom")) return "europe";
+  if (value.includes("north america") || value.includes("united states") || value.includes("u.s.") || value.includes("canada")) return "north_america";
+
+  return "global";
 }
 
 function mapFormat(format: string | undefined): string {
   if (!format) return "series";
   const map: Record<string, string> = {
     Microdrama: "microdrama",
+    "Microdrama / Vertical Fiction": "microdrama",
     "Short Form": "short_form",
+    "Short-form scripted anthology": "short_form",
     Feature: "feature",
     Series: "series",
     Unscripted: "unscripted",
+    "Unscripted competition": "unscripted",
+    "Game Show": "unscripted",
     Branded: "branded",
     "FAST Channel": "fast_channel",
+    "FAST / AVOD Channel": "fast_channel",
+    "FAST / AVOD Original": "fast_channel",
     Interactive: "interactive",
   };
   return map[format] || "series";
@@ -123,6 +178,19 @@ function asStringArray(val: unknown): string[] {
   if (Array.isArray(val)) return val.map((v) => String(v));
   if (typeof val === "string") return val.split("\n").map((s) => s.trim()).filter(Boolean);
   return [];
+}
+
+function toSlug(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function buyerSlug(rec: AirtableRecord): string {
+  return asString(rec.fields["Public Slug"]) || toSlug(asString(rec.fields["Buyer Name"]));
 }
 
 // ─── Airtable pagination ──────────────────────────────────────────────────────
@@ -166,7 +234,7 @@ function validateBuyer(rec: AirtableRecord): ValidationError[] {
   const f = rec.fields;
   const slug = asString(f["Public Slug"]);
 
-  const required = ["Buyer Name", "Public Slug", "Public Description", "Current Mandate", "Last Verified"];
+  const required = ["Buyer Name", "Current Mandate", "Last Verified"];
   for (const field of required) {
     if (!f[field]) {
       errors.push({ airtableId: rec.id, slug, field, message: `Missing required field: ${field}` });
@@ -186,7 +254,9 @@ function validateRecord(rec: AirtableRecord): ValidationError[] {
     "Official Announcement Date",
     "Public Summary",
     "Why It Matters",
-    "Action Route Status",
+    "Record Class",
+    "Evidence Tier",
+    "Route State",
     "Primary Source URL",
   ];
   for (const field of required) {
@@ -219,20 +289,34 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Auth check
+    // Parse request mode and authorization. The ordinary publication path is
+    // deliberately low-friction: it can only run the production mirror, which
+    // reads Website Ready rows from Airtable and validates the complete batch.
+    // The optional administrator secret remains available for dry-runs and for
+    // bypassing the public cooldown during recovery.
+    const url = new URL(req.url);
+    const dryRun = url.searchParams.get("dry_run") === "true";
+    const includeVerified = url.searchParams.get("include_verified") === "true";
     const syncSecret = Deno.env.get("SYNC_SECRET");
     const providedSecret = req.headers.get("x-sync-secret");
-    if (!syncSecret || !providedSecret || providedSecret !== syncSecret) {
+    const hasAdministratorSecret = Boolean(
+      syncSecret && providedSecret && providedSecret === syncSecret
+    );
+    const hasPublicTrigger = req.headers.get("x-pickup-sync") === PUBLIC_SYNC_TRIGGER;
+
+    if (!hasAdministratorSecret && !hasPublicTrigger) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Parse params
-    const url = new URL(req.url);
-    const dryRun = url.searchParams.get("dry_run") === "true";
-    const includeVerified = url.searchParams.get("include_verified") === "true";
+    if (!hasAdministratorSecret && (dryRun || includeVerified)) {
+      return new Response(
+        JSON.stringify({ error: "Dry-run and verified-preview modes require administrator access" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // include_verified only allowed in dry-run mode
     if (includeVerified && !dryRun) {
@@ -259,6 +343,45 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const startedAt = new Date().toISOString();
+    const syncSource = hasAdministratorSecret ? "airtable-admin" : "airtable-public";
+
+    if (!hasAdministratorSecret) {
+      const cooldownStartedAt = new Date(
+        Date.now() - PUBLIC_SYNC_COOLDOWN_MINUTES * 60_000
+      ).toISOString();
+      const { data: recentSync, error: cooldownError } = await supabase
+        .from("sync_runs")
+        .select("completed_at")
+        .eq("dry_run", false)
+        .is("error_message", null)
+        .not("completed_at", "is", null)
+        .gte("completed_at", cooldownStartedAt)
+        .order("completed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (cooldownError) {
+        return new Response(
+          JSON.stringify({ error: "Unable to check sync cooldown" }),
+          { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (recentSync?.completed_at) {
+        const nextAvailableAt = new Date(
+          Date.parse(recentSync.completed_at) + PUBLIC_SYNC_COOLDOWN_MINUTES * 60_000
+        ).toISOString();
+        return new Response(
+          JSON.stringify({
+            success: true,
+            skipped: true,
+            reason: "cooldown",
+            next_available_at: nextAvailableAt,
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
 
     // ─── Fetch from Airtable ────────────────────────────────────────────────
     const recordsFilter = (includeVerified && dryRun)
@@ -293,9 +416,23 @@ Deno.serve(async (req: Request) => {
         }
       }
     } else {
-      // Production mode: only buyers with Publish on Site checked
+      // Production mode: publish explicitly approved buyers plus every buyer
+      // linked to a Website Ready record. A public story must never require a
+      // second buyer-profile checkbox before it can appear on the site.
+      const linkedBuyerIds = new Set<string>();
+      for (const r of airtableRecords) {
+        const links = r.fields["Buyer"] as string[] | undefined;
+        if (links) links.forEach((id) => linkedBuyerIds.add(id));
+      }
+      const buyerClauses = [
+        `{Publish on Site}=1`,
+        ...[...linkedBuyerIds].map((id) => `RECORD_ID()="${id}"`),
+      ];
+      const buyerFormula = buyerClauses.length === 1
+        ? buyerClauses[0]
+        : `OR(${buyerClauses.join(",")})`;
       try {
-        airtableBuyers = await fetchAllAirtableRecords(baseId, buyersTableId, pat, `{Publish on Site}=1`);
+        airtableBuyers = await fetchAllAirtableRecords(baseId, buyersTableId, pat, buyerFormula);
       } catch (e) {
         fetchErrors.push(`Buyers (${buyersTableId}): ${e instanceof Error ? e.message : String(e)}`);
       }
@@ -311,7 +448,7 @@ Deno.serve(async (req: Request) => {
     // ─── Build buyer slug map ─────────────────────────────────────────────
     const buyerAirtableIdToSlug = new Map<string, string>();
     for (const b of airtableBuyers) {
-      const slug = asString(b.fields["Public Slug"]);
+      const slug = buyerSlug(b);
       if (slug) buyerAirtableIdToSlug.set(b.id, slug);
     }
 
@@ -333,6 +470,20 @@ Deno.serve(async (req: Request) => {
       airtableBuyers.filter(b => !invalidBuyerIds.has(b.id)).map(b => b.id)
     );
 
+    // A Website Ready record without a publication-ready linked buyer is a
+    // batch error, not a record to silently omit.
+    for (const r of airtableRecords) {
+      const buyerLinks = (r.fields["Buyer"] as string[] | undefined) || [];
+      if (!buyerLinks.some((id) => validBuyerAirtableIds.has(id))) {
+        recordValidationErrors.push({
+          airtableId: r.id,
+          slug: asString(r.fields["Public Slug"]),
+          field: "Buyer",
+          message: "No linked buyer is ready for publication",
+        });
+      }
+    }
+
     // Determine valid records: own fields pass AND at least one linked valid buyer
     const invalidRecordIds = new Set(recordValidationErrors.map(e => e.airtableId));
     const validRecords = airtableRecords.filter(r => {
@@ -349,7 +500,7 @@ Deno.serve(async (req: Request) => {
     if (dryRun) {
       // Log the dry run
       await supabase.from("sync_runs").insert({
-        source: "airtable",
+        source: syncSource,
         dry_run: true,
         started_at: startedAt,
         completed_at: new Date().toISOString(),
@@ -381,7 +532,7 @@ Deno.serve(async (req: Request) => {
     // ─── Production write: fail if validation errors exist ───────────────────
     if (allValidationErrors.length > 0) {
       await supabase.from("sync_runs").insert({
-        source: "airtable",
+        source: syncSource,
         dry_run: false,
         started_at: startedAt,
         completed_at: new Date().toISOString(),
@@ -407,16 +558,17 @@ Deno.serve(async (req: Request) => {
 
     // ─── Upsert buyers ────────────────────────────────────────────────────────
     let buyersUpserted = 0;
+    const writeErrors: WriteError[] = [];
     for (const b of validBuyers) {
       const f = b.fields;
-      const slug = asString(f["Public Slug"]);
+      const slug = buyerSlug(b);
 
       const buyerRow = {
         id: slug,
         airtable_record_id: b.id,
         name: asString(f["Buyer Name"]),
         type: mapBuyerType(asString(f["Buyer Type"])),
-        description: asString(f["Public Description"]),
+        description: asString(f["Public Description"]) || asString(f["Current Mandate"]),
         primary_formats: asStringArray(f["Primary Formats"]).map(mapFormat),
         territory: mapTerritory(asString(f["HQ / Territory"])),
         current_mandate: asString(f["Current Mandate"]),
@@ -435,7 +587,39 @@ Deno.serve(async (req: Request) => {
         .from("buyers")
         .upsert(buyerRow, { onConflict: "id" });
 
-      if (!error) buyersUpserted++;
+      if (error) {
+        writeErrors.push({
+          table: "buyers",
+          id: slug,
+          message: error.message,
+          code: error.code,
+          details: error.details,
+        });
+      } else {
+        buyersUpserted++;
+      }
+    }
+
+    if (writeErrors.length > 0) {
+      await supabase.from("sync_runs").insert({
+        source: syncSource,
+        dry_run: false,
+        started_at: startedAt,
+        completed_at: new Date().toISOString(),
+        buyers_fetched: airtableBuyers.length,
+        records_fetched: airtableRecords.length,
+        buyers_upserted: buyersUpserted,
+        records_upserted: 0,
+        buyers_unpublished: 0,
+        records_unpublished: 0,
+        validation_errors: [],
+        error_message: JSON.stringify(writeErrors),
+      });
+
+      return new Response(
+        JSON.stringify({ error: "Buyer write failed", write_errors: writeErrors }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // ─── Upsert records ───────────────────────────────────────────────────────
@@ -445,8 +629,6 @@ Deno.serve(async (req: Request) => {
     for (const r of validRecords) {
       const f = r.fields;
       const slug = asString(f["Public Slug"]);
-      syncedRecordSlugs.push(slug);
-
       const primarySourceUrl = asString(f["Primary Source URL"]);
       const secondarySourceUrl = asString(f["Secondary Source URL"]);
       const sources: { name: string; url: string; readTime: string }[] = [];
@@ -455,7 +637,7 @@ Deno.serve(async (req: Request) => {
 
       const actionEnabled = f["Professional Action Enabled"] as boolean | undefined;
       const action = {
-        status: mapActionStatus(asString(f["Action Route Status"])),
+        status: mapActionStatus(asString(f["Route State"])),
         label: asString(f["Action Label"]) || "",
         description: "",
         url: actionEnabled ? asString(f["Action URL"]) || undefined : undefined,
@@ -464,7 +646,10 @@ Deno.serve(async (req: Request) => {
 
       // Resolve buyer links
       const buyerLinks = (f["Buyer"] as string[]) || [];
-      const primaryBuyerSlug = buyerLinks.length > 0 ? buyerAirtableIdToSlug.get(buyerLinks[0]) || "" : "";
+      const primaryBuyerAirtableId = buyerLinks.find((id) => validBuyerAirtableIds.has(id));
+      const primaryBuyerSlug = primaryBuyerAirtableId
+        ? buyerAirtableIdToSlug.get(primaryBuyerAirtableId) || ""
+        : "";
 
       const recordRow = {
         id: slug,
@@ -473,11 +658,13 @@ Deno.serve(async (req: Request) => {
         buyer: "", // will be set from buyer name lookup below
         buyer_id: primaryBuyerSlug,
         headline: asString(f["Record Name"]),
-        record_type: mapRecordType(asString(f["Event Class"])),
-        event_class: mapEventClass(asString(f["Record Type"]), asString(f["Wedge"])),
+        record_type: mapRecordType(asString(f["Transaction Type"])),
+        record_class: mapRecordClass(asString(f["Record Class"])),
+        event_class: mapRecordClass(asString(f["Record Class"])),
+        strategic_tags: mapStrategicTags(f["Strategic Tags"]),
         format: mapFormat(asString(f["Format"])),
         territory: mapTerritory(asString(f["Territory"])),
-        evidence_tier: mapEvidenceTier(asString(f["Highest Evidence Tier"])),
+        evidence_tier: mapEvidenceTier(asString(f["Evidence Tier"])),
         confidence: mapConfidence(asString(f["Mandate Confidence"])),
         summary: asString(f["Public Summary"]),
         verified_facts: asStringArray(f["Verified Facts"]),
@@ -496,7 +683,7 @@ Deno.serve(async (req: Request) => {
       };
 
       // Resolve buyer name from already-upserted buyers
-      const buyerForName = validBuyers.find(vb => asString(vb.fields["Public Slug"]) === primaryBuyerSlug);
+      const buyerForName = validBuyers.find(vb => buyerSlug(vb) === primaryBuyerSlug);
       if (buyerForName) {
         recordRow.buyer = asString(buyerForName.fields["Buyer Name"]);
       }
@@ -505,12 +692,24 @@ Deno.serve(async (req: Request) => {
         .from("records")
         .upsert(recordRow, { onConflict: "id" });
 
-      if (!error) recordsUpserted++;
+      if (error) {
+        writeErrors.push({
+          table: "records",
+          id: slug,
+          message: error.message,
+          code: error.code,
+          details: error.details,
+        });
+      } else {
+        recordsUpserted++;
+        syncedRecordSlugs.push(slug);
+      }
 
       // ─── Rebuild record_buyers links ─────────────────────────────────────
       if (!error) {
         await supabase.from("record_buyers").delete().eq("record_id", slug);
         const links = buyerLinks
+          .filter((airtableId) => validBuyerAirtableIds.has(airtableId))
           .map((airtableId, idx) => ({
             record_id: slug,
             buyer_id: buyerAirtableIdToSlug.get(airtableId) || "",
@@ -518,13 +717,44 @@ Deno.serve(async (req: Request) => {
           }))
           .filter((l) => l.buyer_id);
         if (links.length > 0) {
-          await supabase.from("record_buyers").insert(links);
+          const { error: linkError } = await supabase.from("record_buyers").insert(links);
+          if (linkError) {
+            writeErrors.push({
+              table: "record_buyers",
+              id: slug,
+              message: linkError.message,
+              code: linkError.code,
+              details: linkError.details,
+            });
+          }
         }
       }
     }
 
+    if (writeErrors.length > 0) {
+      await supabase.from("sync_runs").insert({
+        source: syncSource,
+        dry_run: false,
+        started_at: startedAt,
+        completed_at: new Date().toISOString(),
+        buyers_fetched: airtableBuyers.length,
+        records_fetched: airtableRecords.length,
+        buyers_upserted: buyersUpserted,
+        records_upserted: recordsUpserted,
+        buyers_unpublished: 0,
+        records_unpublished: 0,
+        validation_errors: [],
+        error_message: JSON.stringify(writeErrors),
+      });
+
+      return new Response(
+        JSON.stringify({ error: "Record write failed", write_errors: writeErrors }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ─── Unpublish rows no longer passing the publication gate ───────────────
-    const syncedBuyerSlugs = validBuyers.map(b => asString(b.fields["Public Slug"]));
+    const syncedBuyerSlugs = validBuyers.map(b => buyerSlug(b));
 
     // Buyers: mark is_published=false for previously-synced buyers no longer in the batch
     const { data: existingPublishedBuyers } = await supabase
@@ -568,7 +798,7 @@ Deno.serve(async (req: Request) => {
 
     // ─── Log sync run ────────────────────────────────────────────────────────
     await supabase.from("sync_runs").insert({
-      source: "airtable",
+      source: syncSource,
       dry_run: false,
       started_at: startedAt,
       completed_at: new Date().toISOString(),

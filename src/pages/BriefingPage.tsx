@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, TrendingUp, AlertCircle, Eye } from 'lucide-react';
 import { getLatestIssue } from '../data/service';
-import { RecordTypeBadge, EventClassBadge, FormatBadge, ConfidenceBadge, ActionRouteBadge } from '../components/Badges';
+import { RecordTypeBadge, RecordClassBadge, FormatBadge, ConfidenceBadge, ActionRouteBadge } from '../components/Badges';
 import { EmailCapture } from '../components/EmailCapture';
 import { PrototypeNotice } from '../components/PrototypeNotice';
 import type { Confidence, DealRecord } from '../data/types';
@@ -13,12 +13,12 @@ export function BriefingPage() {
 
   const moneyMoveRecords = issue.moneyMoves
     .map(id => demoRecords.find(r => r.id === id))
-    .filter(r => r && r.eventClass === 'confirmed_deal')
+    .filter(r => r && r.recordClass === 'confirmed_deal')
     .slice(0, 3);
 
   const legacyCrossoverRecords = issue.legacyCrossovers
     .map(id => demoRecords.find(r => r.id === id))
-    .filter(r => r && r.eventClass === 'legacy_crossover')
+    .filter(r => r && r.strategicTags?.includes('legacy_crossover'))
     .slice(0, 1);
 
   const buyerToWatch = demoBuyers.find(b => b.id === issue.buyerToWatch);
@@ -79,7 +79,7 @@ export function BriefingPage() {
             {legacyCrossoverRecords.map(record => record && (
               <div key={record.id} className="py-3">
                 <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                  <EventClassBadge eventClass={record.eventClass} />
+                  <RecordClassBadge recordClass={record.recordClass} />
                   <ConfidenceBadge confidence={record.confidence} />
                 </div>
                 <h3 className="font-semibold text-sm text-ink-900 leading-snug">{record.headline}</h3>

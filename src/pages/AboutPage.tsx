@@ -37,6 +37,15 @@ export function AboutPage() {
           When we don't know something, we say so.
         </p>
 
+        <h2 className="text-lg font-bold text-ink-900 pt-4">How to read a record</h2>
+        <div className="border border-ink-100 rounded-lg bg-white divide-y divide-ink-100 text-xs">
+          <p className="p-3"><span className="font-semibold text-ink-900">Record class:</span> Confirmed Deal, Developing Signal, or Context.</p>
+          <p className="p-3"><span className="font-semibold text-ink-900">Strategic tags:</span> Legacy Crossover, Vertical, Creator-led, FAST, and Brand-funded. A record may carry several.</p>
+          <p className="p-3"><span className="font-semibold text-ink-900">Evidence tier:</span> the strength and type of support for the material claim.</p>
+          <p className="p-3"><span className="font-semibold text-ink-900">Mandate confidence:</span> High, Medium, or Low confidence in what the evidence says the buyer wants.</p>
+          <p className="p-3"><span className="font-semibold text-ink-900">Route state:</span> Not researched, Underway, Verified, Likely, or Researched—none identified.</p>
+        </div>
+
         <h2 className="text-lg font-bold text-ink-900 pt-4">Who it's for</h2>
         <p>
           The Pickup is for working entertainment professionals — writers, producers, directors,
@@ -44,19 +53,26 @@ export function AboutPage() {
           and whether there's a legitimate professional action they can take.
         </p>
 
-        <h2 className="text-lg font-bold text-ink-900 pt-4">Evidence tiers</h2>
+        <h2 className="text-lg font-bold text-ink-900 pt-4">Evidence quality</h2>
+        <p>
+          We record where a signal was discovered separately from the strength of the evidence supporting it. A job board, app catalog, or programming grid is a discovery lane, not an automatic evidence grade.
+        </p>
         <div className="space-y-3">
           <div className="border border-ink-100 rounded-lg p-3 bg-white">
-            <p className="font-semibold text-ink-900 text-xs uppercase tracking-wide mb-1">Tier 1 — Primary source</p>
-            <p className="text-xs text-ink-600">Official announcements, SEC filings, confirmed press releases, on-the-record interviews.</p>
+            <p className="font-semibold text-ink-900 text-xs uppercase tracking-wide mb-1">Tier 1 — Primary public evidence</p>
+            <p className="text-xs text-ink-600">Official announcements, filings, company pages, investor materials, and on-the-record statements.</p>
           </div>
           <div className="border border-ink-100 rounded-lg p-3 bg-white">
-            <p className="font-semibold text-ink-900 text-xs uppercase tracking-wide mb-1">Tier 2 — Trade reporting</p>
-            <p className="text-xs text-ink-600">Established trade publication reporting, job postings, app store data, industry conference statements.</p>
+            <p className="font-semibold text-ink-900 text-xs uppercase tracking-wide mb-1">Tier 2 — Corroborated reporting</p>
+            <p className="text-xs text-ink-600">Independent, established reporting with attributable sourcing.</p>
           </div>
           <div className="border border-ink-100 rounded-lg p-3 bg-white">
-            <p className="font-semibold text-ink-900 text-xs uppercase tracking-wide mb-1">Tier 3 — Inference</p>
-            <p className="text-xs text-ink-600">Pattern recognition, social media signals, unconfirmed reports. Lowest certainty.</p>
+            <p className="font-semibold text-ink-900 text-xs uppercase tracking-wide mb-1">Tier 3 — Operational signal</p>
+            <p className="text-xs text-ink-600">Job and casting activity, app or catalog changes, programming changes, and observable patterns that require interpretation.</p>
+          </div>
+          <div className="border border-ink-100 rounded-lg p-3 bg-white">
+            <p className="font-semibold text-ink-900 text-xs uppercase tracking-wide mb-1">Tier 4 — Direct verification</p>
+            <p className="text-xs text-ink-600">A material claim confirmed directly by a buyer or source. Identity remains confidential unless disclosure is authorized.</p>
           </div>
         </div>
       </section>

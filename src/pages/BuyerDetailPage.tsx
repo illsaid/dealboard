@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, HelpCircle, Lock } from 'lucide-react';
 import { useBuyerById, useRecordsForBuyer } from '../data/useDataService';
 import { pluralize } from '../data/service';
-import { BuyerTypeBadge, ConfidenceBadge, FormatBadge, EventClassBadge } from '../components/Badges';
+import { BuyerTypeBadge, ConfidenceBadge, FormatBadge, RecordClassBadge } from '../components/Badges';
 
 export function BuyerDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -93,7 +93,7 @@ export function BuyerDetailPage() {
               ) : (
                 <Link key={r.id} to={`/deals/${r.id}`} className="block border border-ink-100 rounded-lg p-3 bg-white hover:border-ink-200 transition-colors">
                   <div className="flex items-center gap-2 mb-1">
-                    <EventClassBadge eventClass={r.eventClass} />
+                    <RecordClassBadge recordClass={r.recordClass} />
                     <span className="text-xs text-ink-500">{r.date}</span>
                   </div>
                   <p className="text-sm font-medium text-ink-800">{r.headline}</p>
