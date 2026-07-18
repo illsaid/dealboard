@@ -4,7 +4,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['Archivo', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['Archivo', 'system-ui', '-apple-system', 'sans-serif'],
       },
       colors: {
         cream: {
@@ -24,17 +25,17 @@ export default {
           100: '#EBEBEB',
           50: '#F5F5F5',
         },
-        burgundy: {
-          900: '#4A0E1C',
-          800: '#6B1428',
-          700: '#8B1A34',
-          600: '#A62040',
-          500: '#C4264C',
-          400: '#D94D6F',
-          300: '#E87D96',
-          200: '#F2ADBE',
-          100: '#FAD9E2',
-          50: '#FDF0F3',
+        // Signal red — large display, numbers, hero accents only.
+        signal: {
+          DEFAULT: '#EC3013',
+          600: '#D62B10',
+          700: '#C2260E',
+        },
+        // Ink red — small text, active links, selected controls, buttons.
+        inkred: {
+          DEFAULT: '#AE1800',
+          600: '#9C1500',
+          700: '#8A1300',
         },
         amber: {
           900: '#5C3D0A',
@@ -60,6 +61,13 @@ export default {
           100: '#C9EDD4',
           50: '#EDFAF1',
         },
+      },
+      borderRadius: {
+        // Ledger system: square corners by default.
+        lg: '0',
+        md: '0',
+        DEFAULT: '0',
+        sm: '0',
       },
     },
   },

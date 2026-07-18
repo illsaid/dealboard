@@ -9,16 +9,41 @@
   }
 
   body {
-    @apply bg-cream-100 text-ink-900 font-sans leading-relaxed;
+    @apply bg-cream-100 text-ink-900 font-sans leading-relaxed antialiased;
   }
 
   ::selection {
-    @apply bg-burgundy-100 text-burgundy-900;
+    @apply bg-signal text-cream-50;
+  }
+
+  /* Ledger system: 1px ink rules, square corners, no soft shadows. */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
   }
 }
 
 @layer components {
   .section-divider {
-    @apply border-t border-ink-100;
+    @apply border-t border-ink-200;
+  }
+
+  /* Ledger row divider — hairline rule between table/list rows. */
+  .ledger-row {
+    @apply border-b border-ink-100;
+  }
+
+  /* Kicker — small uppercase label above display type. */
+  .kicker {
+    @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-inkred;
+  }
+
+  /* Muted tag run — inline label/value pairs, no chips. */
+  .tag-run {
+    @apply text-xs text-ink-500;
+  }
+
+  /* Deep-red text link for ledger surfaces. */
+  .ledger-link {
+    @apply text-inkred font-semibold underline-offset-2 hover:underline;
   }
 }

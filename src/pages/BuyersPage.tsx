@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ArrowRight, X } from 'lucide-react';
+import { Search, X, ArrowRight } from 'lucide-react';
 import { useBuyers } from '../data/useDataService';
 import { useData } from '../data/DataProvider';
 import { pluralize } from '../data/service';
-import { BuyerTypeBadge, ConfidenceBadge, FormatBadge } from '../components/Badges';
+import { BuyerTypeBadge, ConfidenceBadge, FormatBadge, buyerTypeLabels } from '../components/Badges';
 import { PrototypeNotice } from '../components/PrototypeNotice';
 import type { BuyerType, Confidence } from '../data/types';
 
@@ -46,7 +46,8 @@ export function BuyersPage() {
       {!isLive && <PrototypeNotice />}
 
       <header className="mt-6 mb-6">
-        <h1 className="text-2xl font-bold text-ink-900">Buyer Directory</h1>
+        <p className="kicker mb-2">Directory</p>
+        <h1 className="text-3xl font-extrabold text-ink-900 font-display">Buyer Directory</h1>
         <p className="text-sm text-ink-600 mt-1">Who is actively writing checks for entertainment content.</p>
       </header>
 
@@ -59,29 +60,25 @@ export function BuyersPage() {
             placeholder="Search buyers, mandates..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-sm border border-ink-200 rounded bg-white text-ink-900 placeholder:text-ink-400 focus:outline-none focus:border-burgundy-400 focus:ring-1 focus:ring-burgundy-200"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-ink-300 bg-white text-ink-900 placeholder:text-ink-400 focus:outline-none focus:border-inkred"
           />
         </div>
         <div className="flex gap-2">
           <select
             value={filterType}
             onChange={e => setFilterType(e.target.value as BuyerType | '')}
-            className="text-xs border border-ink-200 rounded px-2 py-2 bg-white text-ink-700 focus:outline-none"
+            className="text-xs border border-ink-300 px-2 py-2 bg-white text-ink-700 focus:outline-none focus:border-inkred"
             aria-label="Buyer type filter"
           >
             <option value="">All types</option>
-            <option value="microdrama_platform">Microdrama Platform</option>
-            <option value="creator_studio">Creator Studio</option>
-            <option value="brand_funded">Brand-Funded</option>
-            <option value="fast_channel">FAST Channel</option>
-            <option value="digital_platform">Digital Platform</option>
-            <option value="legacy_studio">Legacy Studio</option>
-            <option value="financier">Financier</option>
+            {(Object.keys(buyerTypeLabels) as BuyerType[]).map(t => (
+              <option key={t} value={t}>{buyerTypeLabels[t]}</option>
+            ))}
           </select>
           <select
             value={filterConfidence}
             onChange={e => setFilterConfidence(e.target.value as Confidence | '')}
-            className="text-xs border border-ink-200 rounded px-2 py-2 bg-white text-ink-700 focus:outline-none"
+            className="text-xs border border-ink-300 px-2 py-2 bg-white text-ink-700 focus:outline-none focus:border-inkred"
             aria-label="Confidence filter"
           >
             <option value="">All confidence</option>
@@ -97,40 +94,67 @@ export function BuyersPage() {
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
-            className="flex items-center gap-1 text-xs text-burgundy-700 hover:text-burgundy-900 font-medium"
+            className="flex items-center gap-1 text-xs text-inkred font-semibold hover:underline"
           >
             <X size={12} /> Clear filters
           </button>
         )}
       </div>
 
-      {/* Buyer Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Desktop ledger table — column headers visible */}
+      <div className="hidden md:block border-t border-b border-ink-900">
+        <div className="grid grid-cols-[2fr_1.2fr_1fr_1.4fr_0.8fr_0.6fr] gap-4 py-2 border-b border-ink-200 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">
+          <div>Buyer</div>
+          <div>Mandate</div>
+          <div>Confidence</div>
+          <div>Formats</div>
+          <div>Verified</div>
+          <div className="text-right">Records</div>
+        </div>
         {filtered.map(buyer => (
           <Link
             key={buyer.id}
             to={`/buyers/${buyer.id}`}
-            className="border border-ink-100 rounded-lg p-4 bg-white hover:border-ink-200 hover:shadow-sm transition-all"
+            className="grid grid-cols-[2fr_1.2fr_1fr_1.4fr_0.8fr_0.6fr] gap-4 py-3 border-b border-ink-100 hover:bg-cream-50 transition-colors items-center group"
           >
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <h3 className="font-semibold text-ink-900 leading-snug">{buyer.name}</h3>
-              <ConfidenceBadge confidence={buyer.mandateConfidence} />
+            <div>
+              <p className="font-bold text-ink-900 group-hover:text-inkred transition-colors">{buyer.name}</p>
+              <BuyerTypeBadge type={buyer.type} />
             </div>
-            <BuyerTypeBadge type={buyer.type} />
-            <div className="flex flex-wrap gap-1 mt-2">
+            <p className="text-sm text-ink-700 line-clamp-2">{buyer.currentMandate}</p>
+            <div><ConfidenceBadge confidence={buyer.mandateConfidence} /></div>
+            <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-ink-500">
               {buyer.primaryFormats.slice(0, 3).map(f => (
                 <FormatBadge key={f} format={f} />
               ))}
             </div>
-            <p className="text-xs text-ink-600 mt-3 line-clamp-2">{buyer.currentMandate}</p>
-            <div className="mt-3 pt-3 border-t border-ink-50 flex items-center justify-between">
-              <span className="text-xs text-ink-500">Last verified: {buyer.lastVerified}</span>
-              <span className="text-xs text-ink-400">{buyer.recordIds.length} {pluralize(buyer.recordIds.length, 'record')}</span>
+            <span className="text-xs text-ink-500">{buyer.lastVerified}</span>
+            <span className="text-xs text-ink-500 text-right">{buyer.recordIds.length}</span>
+          </Link>
+        ))}
+      </div>
+
+      {/* Mobile ledger — inline labels, no column headers */}
+      <div className="md:hidden border-t border-b border-ink-900 divide-y divide-ink-100">
+        {filtered.map(buyer => (
+          <Link
+            key={buyer.id}
+            to={`/buyers/${buyer.id}`}
+            className="block py-4 group"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-bold text-ink-900 group-hover:text-inkred transition-colors">{buyer.name}</p>
+                <BuyerTypeBadge type={buyer.type} />
+              </div>
+              <ArrowRight size={16} className="text-ink-300 mt-1" />
             </div>
-            <p className="text-xs text-ink-500 mt-2">{buyer.recentActivity}</p>
-            <span className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-burgundy-700">
-              View profile <ArrowRight size={12} />
-            </span>
+            <div className="mt-2 text-xs text-ink-600 space-y-1">
+              <p><span className="text-ink-400">Mandate:</span> {buyer.currentMandate}</p>
+              <p><span className="text-ink-400">Confidence:</span> <ConfidenceBadge confidence={buyer.mandateConfidence} /></p>
+              <p><span className="text-ink-400">Verified:</span> {buyer.lastVerified}</p>
+              <p><span className="text-ink-400">Records:</span> {buyer.recordIds.length}</p>
+            </div>
           </Link>
         ))}
       </div>

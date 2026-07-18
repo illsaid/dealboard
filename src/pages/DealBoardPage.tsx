@@ -96,14 +96,16 @@ export function DealBoardPage() {
       {!isLive && <PrototypeNotice />}
 
       <header className="mt-6 mb-6">
-        <h1 className="text-2xl font-bold text-ink-900">Deal Board</h1>
+        <p className="kicker mb-2">Scoreboard</p>
+        <h1 className="text-3xl font-extrabold text-ink-900 font-display">Deal Board</h1>
         <p className="text-sm text-ink-600 mt-1">Searchable intelligence on who's buying entertainment and what they're acquiring.</p>
       </header>
 
       {/* Stats bar */}
-      <div className="flex flex-wrap items-center gap-4 mb-6 text-xs text-ink-500">
-        <span className="flex items-center gap-1">
-          <span className="font-semibold text-burgundy-700">{newThisWeek}</span> new this week
+      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 mb-6 text-xs text-ink-500 border-t border-b border-ink-200 py-2">
+        <span>
+          <span className="text-2xl font-extrabold text-signal font-display">{newThisWeek}</span>{' '}
+          <span className="text-ink-500">new this week</span>
         </span>
         <span>{allRecords.length} published {pluralize(allRecords.length, 'record')}</span>
         <span className="flex items-center gap-1">
@@ -120,30 +122,29 @@ export function DealBoardPage() {
             placeholder="Search records, buyers, keywords..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-sm border border-ink-200 rounded bg-white text-ink-900 placeholder:text-ink-400 focus:outline-none focus:border-burgundy-400 focus:ring-1 focus:ring-burgundy-200"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-ink-300 bg-white text-ink-900 placeholder:text-ink-400 focus:outline-none focus:border-inkred"
           />
         </div>
         <div className="flex items-center gap-2">
           <select
             value={sort}
             onChange={e => setSort(e.target.value as SortMode)}
-            className="text-xs border border-ink-200 rounded px-2 py-2 bg-white text-ink-700 focus:outline-none"
+            className="text-xs border border-ink-300 px-2 py-2 bg-white text-ink-700 focus:outline-none focus:border-inkred"
           >
             <option value="newest">Newest</option>
             <option value="confidence">Confidence</option>
             <option value="buyer">Buyer</option>
           </select>
-          {/* View toggle hidden on mobile — cards are forced */}
           <button
             onClick={() => setView('cards')}
-            className={`hidden md:inline-flex p-2 rounded ${view === 'cards' ? 'bg-ink-900 text-cream-50' : 'text-ink-500 hover:text-ink-900 border border-ink-200'}`}
+            className={`hidden md:inline-flex p-2 border ${view === 'cards' ? 'bg-ink-900 text-cream-50 border-ink-900' : 'text-ink-500 hover:text-ink-900 border-ink-300'}`}
             aria-label="Card view"
           >
             <LayoutGrid size={14} />
           </button>
           <button
             onClick={() => setView('table')}
-            className={`hidden md:inline-flex p-2 rounded ${view === 'table' ? 'bg-ink-900 text-cream-50' : 'text-ink-500 hover:text-ink-900 border border-ink-200'}`}
+            className={`hidden md:inline-flex p-2 border ${view === 'table' ? 'bg-ink-900 text-cream-50 border-ink-900' : 'text-ink-500 hover:text-ink-900 border-ink-300'}`}
             aria-label="Table view"
           >
             <List size={14} />
@@ -155,18 +156,18 @@ export function DealBoardPage() {
       <div className="flex flex-wrap gap-2 mb-4">
         <div className="flex items-center gap-2 mr-1">
           <span className="text-xs text-ink-500">Record class</span>
-          <div className="inline-flex rounded border border-ink-200 bg-white p-0.5">
+          <div className="inline-flex border border-ink-300 bg-white p-0.5">
             <button
               type="button"
               onClick={() => setActiveBoardView('deals')}
-              className={`px-2.5 py-1 text-xs rounded transition-colors ${activeBoardView === 'deals' ? 'bg-ink-900 text-cream-50' : 'text-ink-600 hover:text-ink-900'}`}
+              className={`px-2.5 py-1 text-xs font-semibold transition-colors ${activeBoardView === 'deals' ? 'bg-ink-900 text-cream-50' : 'text-ink-600 hover:text-ink-900'}`}
             >
               Confirmed deals
             </button>
             <button
               type="button"
               onClick={() => setActiveBoardView('signals')}
-              className={`px-2.5 py-1 text-xs rounded transition-colors ${activeBoardView === 'signals' ? 'bg-ink-900 text-cream-50' : 'text-ink-600 hover:text-ink-900'}`}
+              className={`px-2.5 py-1 text-xs font-semibold transition-colors ${activeBoardView === 'signals' ? 'bg-ink-900 text-cream-50' : 'text-ink-600 hover:text-ink-900'}`}
             >
               Signals
             </button>
@@ -190,7 +191,7 @@ export function DealBoardPage() {
           type="button"
           onClick={() => setShowAdvancedFilters(current => !current)}
           aria-expanded={showAdvancedFilters}
-          className={`inline-flex items-center gap-1.5 rounded border px-2.5 py-1.5 text-xs transition-colors ${showAdvancedFilters ? 'border-burgundy-300 bg-burgundy-50 text-burgundy-800' : 'border-ink-200 bg-white text-ink-700 hover:border-ink-300'}`}
+          className={`inline-flex items-center gap-1.5 border px-2.5 py-1.5 text-xs font-semibold transition-colors ${showAdvancedFilters ? 'border-ink-900 bg-cream-50 text-ink-900' : 'border-ink-300 bg-white text-ink-700 hover:border-ink-900'}`}
         >
           <SlidersHorizontal size={13} />
           {showAdvancedFilters ? 'Hide advanced filters' : 'Advanced filters'}
@@ -198,7 +199,7 @@ export function DealBoardPage() {
       </div>
 
       {showAdvancedFilters && (
-        <div className="flex flex-wrap items-center gap-2 mb-4 rounded-lg border border-ink-100 bg-cream-50 p-3">
+        <div className="flex flex-wrap items-center gap-2 mb-4 border border-ink-200 bg-cream-50 p-3">
           <FilterSelect label="Type" value={filterType} onChange={v => setFilterType(v as RecordType | '')} options={[
             { value: '', label: 'All types' },
             { value: 'acquisition', label: 'Acquisition' },
@@ -208,55 +209,55 @@ export function DealBoardPage() {
             { value: 'license', label: 'License' },
             { value: 'development', label: 'Development' },
           ]} />
-        <FilterSelect label="Evidence" value={filterEvidence} onChange={v => setFilterEvidence(v as EvidenceTier | '')} options={[
-          { value: '', label: 'All tiers' },
-          { value: 'tier_1', label: 'Tier 1' },
-          { value: 'tier_2', label: 'Tier 2' },
-          { value: 'tier_3', label: 'Tier 3' },
-          { value: 'tier_4', label: 'Tier 4' },
-        ]} />
-        <FilterSelect label="Confidence" value={filterConfidence} onChange={v => setFilterConfidence(v as Confidence | '')} options={[
-          { value: '', label: 'All levels' },
-          { value: 'high', label: 'High' },
-          { value: 'medium', label: 'Medium' },
-          { value: 'low', label: 'Low' },
-        ]} />
-        <FilterSelect label="Territory" value={filterTerritory} onChange={v => setFilterTerritory(v as Territory | '')} options={[
-          { value: '', label: 'All territories' },
-          { value: 'global', label: 'Global' },
-          { value: 'north_america', label: 'North America' },
-          { value: 'europe', label: 'Europe' },
-          { value: 'asia_pacific', label: 'Asia Pacific' },
-          { value: 'latin_america', label: 'Latin America' },
-        ]} />
-        <FilterSelect label="Action route" value={filterAction} onChange={v => setFilterAction(v as ActionRouteStatus | '')} options={[
-          { value: '', label: 'All routes' },
-          { value: 'not_researched', label: 'Not researched' },
-          { value: 'underway', label: 'Underway' },
-          { value: 'verified', label: 'Verified route' },
-          { value: 'likely', label: 'Likely route' },
-          { value: 'researched_none', label: 'Researched — none identified' },
-        ]} />
-        <div className="flex items-center gap-1.5">
-          <label className="text-xs text-ink-500">From</label>
-          <input
-            type="date"
-            value={filterDateFrom}
-            onChange={e => setFilterDateFrom(e.target.value)}
-            className="text-xs border border-ink-200 rounded px-2 py-1.5 bg-white text-ink-700 focus:outline-none focus:border-burgundy-400"
-            aria-label="Date from"
-          />
-        </div>
-        <div className="flex items-center gap-1.5">
-          <label className="text-xs text-ink-500">To</label>
-          <input
-            type="date"
-            value={filterDateTo}
-            onChange={e => setFilterDateTo(e.target.value)}
-            className="text-xs border border-ink-200 rounded px-2 py-1.5 bg-white text-ink-700 focus:outline-none focus:border-burgundy-400"
-            aria-label="Date to"
-          />
-        </div>
+          <FilterSelect label="Evidence" value={filterEvidence} onChange={v => setFilterEvidence(v as EvidenceTier | '')} options={[
+            { value: '', label: 'All tiers' },
+            { value: 'tier_1', label: 'Tier 1' },
+            { value: 'tier_2', label: 'Tier 2' },
+            { value: 'tier_3', label: 'Tier 3' },
+            { value: 'tier_4', label: 'Tier 4' },
+          ]} />
+          <FilterSelect label="Confidence" value={filterConfidence} onChange={v => setFilterConfidence(v as Confidence | '')} options={[
+            { value: '', label: 'All levels' },
+            { value: 'high', label: 'High' },
+            { value: 'medium', label: 'Medium' },
+            { value: 'low', label: 'Low' },
+          ]} />
+          <FilterSelect label="Territory" value={filterTerritory} onChange={v => setFilterTerritory(v as Territory | '')} options={[
+            { value: '', label: 'All territories' },
+            { value: 'global', label: 'Global' },
+            { value: 'north_america', label: 'North America' },
+            { value: 'europe', label: 'Europe' },
+            { value: 'asia_pacific', label: 'Asia Pacific' },
+            { value: 'latin_america', label: 'Latin America' },
+          ]} />
+          <FilterSelect label="Action route" value={filterAction} onChange={v => setFilterAction(v as ActionRouteStatus | '')} options={[
+            { value: '', label: 'All routes' },
+            { value: 'not_researched', label: 'Not researched' },
+            { value: 'underway', label: 'Underway' },
+            { value: 'verified', label: 'Verified route' },
+            { value: 'likely', label: 'Likely route' },
+            { value: 'researched_none', label: 'Researched — none identified' },
+          ]} />
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs text-ink-500">From</label>
+            <input
+              type="date"
+              value={filterDateFrom}
+              onChange={e => setFilterDateFrom(e.target.value)}
+              className="text-xs border border-ink-300 px-2 py-1.5 bg-white text-ink-700 focus:outline-none focus:border-inkred"
+              aria-label="Date from"
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs text-ink-500">To</label>
+            <input
+              type="date"
+              value={filterDateTo}
+              onChange={e => setFilterDateTo(e.target.value)}
+              className="text-xs border border-ink-300 px-2 py-1.5 bg-white text-ink-700 focus:outline-none focus:border-inkred"
+              aria-label="Date to"
+            />
+          </div>
         </div>
       )}
 
@@ -269,7 +270,7 @@ export function DealBoardPage() {
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
-            className="flex items-center gap-1 text-xs text-burgundy-700 hover:text-burgundy-900 font-medium"
+            className="flex items-center gap-1 text-xs text-inkred font-semibold hover:underline"
           >
             <X size={12} /> Clear filters
           </button>
@@ -291,21 +292,21 @@ export function DealBoardPage() {
             ))}
           </div>
         ) : (
-          <div className="border border-ink-100 rounded-lg overflow-hidden bg-white">
+          <div className="border-t border-b border-ink-900 overflow-hidden bg-white">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-ink-100 bg-cream-50">
-                  <th className="text-left px-3 py-2 font-semibold text-ink-700">Date</th>
-                  <th className="text-left px-3 py-2 font-semibold text-ink-700">Buyer</th>
-                  <th className="text-left px-3 py-2 font-semibold text-ink-700">Headline</th>
-                  <th className="text-left px-3 py-2 font-semibold text-ink-700">Class</th>
-                  <th className="text-left px-3 py-2 font-semibold text-ink-700">Evidence</th>
-                  <th className="text-left px-3 py-2 font-semibold text-ink-700">Confidence</th>
-                  <th className="text-left px-3 py-2 font-semibold text-ink-700">Action</th>
+                <tr className="border-b border-ink-200 bg-cream-50">
+                  <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Date</th>
+                  <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Buyer</th>
+                  <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Headline</th>
+                  <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Class</th>
+                  <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Evidence</th>
+                  <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Confidence</th>
+                  <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Action</th>
                   <th className="px-3 py-2"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-ink-50">
+              <tbody className="divide-y divide-ink-100">
                 {filtered.map(record => (
                   <tr key={record.id} className="hover:bg-cream-50 transition-colors">
                     <td className="px-3 py-2.5 text-ink-500 whitespace-nowrap">{record.date}</td>
@@ -321,7 +322,7 @@ export function DealBoardPage() {
                       {record.locked ? (
                         <Lock size={14} className="text-ink-300" />
                       ) : (
-                        <Link to={`/deals/${record.id}`} className="text-xs font-medium text-burgundy-700 hover:text-burgundy-900 whitespace-nowrap">
+                        <Link to={`/deals/${record.id}`} className="text-xs font-semibold text-inkred hover:underline whitespace-nowrap">
                           View
                         </Link>
                       )}
@@ -347,7 +348,7 @@ function FilterSelect({ label, value, onChange, options }: {
     <select
       value={value}
       onChange={e => onChange(e.target.value)}
-      className="text-xs border border-ink-200 rounded px-2 py-1.5 bg-white text-ink-700 focus:outline-none focus:border-burgundy-400"
+      className="text-xs border border-ink-300 px-2 py-1.5 bg-white text-ink-700 focus:outline-none focus:border-inkred"
       aria-label={label}
     >
       {options.map(opt => (

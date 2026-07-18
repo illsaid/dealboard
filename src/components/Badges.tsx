@@ -66,95 +66,80 @@ const actionRouteLabels: Record<ActionRouteStatus, string> = {
   researched_none: 'No public route identified',
 };
 
-export function RecordTypeBadge({ type }: { type: RecordType }) {
-  return (
-    <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded bg-ink-50 text-ink-700 border border-ink-200">
-      {recordTypeLabels[type]}
-    </span>
-  );
-}
+const confidenceText: Record<Confidence, string> = {
+  high: 'text-forest-700',
+  medium: 'text-amber-700',
+  low: 'text-ink-500',
+};
 
+const actionRouteText: Record<ActionRouteStatus, string> = {
+  not_researched: 'text-ink-500',
+  underway: 'text-ink-700',
+  verified: 'text-forest-700',
+  likely: 'text-amber-700',
+  researched_none: 'text-ink-500',
+};
+
+const recordClassText: Record<RecordClass, string> = {
+  confirmed_deal: 'text-forest-700',
+  developing_signal: 'text-amber-700',
+  context: 'text-ink-500',
+};
+
+// Plain-text kicker for record class.
 export function RecordClassBadge({ recordClass }: { recordClass: RecordClass }) {
-  const styles: Record<RecordClass, string> = {
-    confirmed_deal: 'bg-forest-50 text-forest-800 border-forest-200',
-    developing_signal: 'bg-amber-50 text-amber-800 border-amber-200',
-    context: 'bg-ink-50 text-ink-600 border-ink-200',
-  };
-
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded border ${styles[recordClass]}`}>
+    <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${recordClassText[recordClass]}`}>
       {recordClassLabels[recordClass]}
     </span>
   );
 }
 
+// Muted tag runs — inline plain text, no chips.
+export function RecordTypeBadge({ type }: { type: RecordType }) {
+  return <span className="text-xs text-ink-500">{recordTypeLabels[type]}</span>;
+}
+
 export function StrategicTagBadge({ tag }: { tag: StrategicTag }) {
-  return (
-    <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded bg-burgundy-50 text-burgundy-800 border border-burgundy-100">
-      {strategicTagLabels[tag]}
-    </span>
-  );
+  return <span className="text-xs text-ink-500">{strategicTagLabels[tag]}</span>;
 }
 
 export function FormatBadge({ format }: { format: Format }) {
-  return (
-    <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded bg-cream-200 text-ink-600 border border-ink-100">
-      {formatLabels[format]}
-    </span>
-  );
+  return <span className="text-xs text-ink-500">{formatLabels[format]}</span>;
 }
 
 export function BuyerTypeBadge({ type }: { type: BuyerType }) {
-  return (
-    <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded bg-ink-50 text-ink-600 border border-ink-200">
-      {buyerTypeLabels[type]}
-    </span>
-  );
+  return <span className="text-xs text-ink-500">{buyerTypeLabels[type]}</span>;
 }
 
 export function EvidenceBadge({ tier }: { tier: EvidenceTier }) {
-  const styles: Record<EvidenceTier, string> = {
-    tier_1: 'bg-forest-50 text-forest-800 border-forest-200',
-    tier_2: 'bg-amber-50 text-amber-800 border-amber-200',
-    tier_3: 'bg-ink-50 text-ink-600 border-ink-200',
-    tier_4: 'bg-ink-50 text-ink-400 border-ink-100',
-  };
-
-  return (
-    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded border ${styles[tier]}`}>
-      {evidenceTierLabels[tier]}
-    </span>
-  );
+  return <span className="text-xs text-ink-500">{evidenceTierLabels[tier]}</span>;
 }
 
 export function ConfidenceBadge({ confidence }: { confidence: Confidence }) {
-  const styles: Record<Confidence, string> = {
-    high: 'bg-forest-50 text-forest-800 border-forest-200',
-    medium: 'bg-amber-50 text-amber-800 border-amber-200',
-    low: 'bg-ink-50 text-ink-500 border-ink-200',
-  };
-
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded border ${styles[confidence]}`}>
+    <span className={`text-xs font-semibold ${confidenceText[confidence]}`}>
       {confidenceLabels[confidence]} confidence
     </span>
   );
 }
 
+// Outlined status label — used only on detail pages where the design calls for it.
 export function ActionRouteBadge({ status }: { status: ActionRouteStatus }) {
-  const styles: Record<ActionRouteStatus, string> = {
-    not_researched: 'bg-ink-50 text-ink-500 border-ink-200',
-    underway: 'bg-blue-50 text-blue-800 border-blue-200',
-    verified: 'bg-forest-50 text-forest-800 border-forest-200',
-    likely: 'bg-amber-50 text-amber-800 border-amber-200',
-    researched_none: 'bg-ink-50 text-ink-500 border-ink-200',
-  };
-
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded border ${styles[status]}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold border border-ink-300 ${actionRouteText[status]}`}>
       {actionRouteLabels[status]}
     </span>
   );
 }
 
-export { recordTypeLabels, recordClassLabels, strategicTagLabels, formatLabels, buyerTypeLabels, evidenceTierLabels, confidenceLabels, actionRouteLabels };
+export {
+  recordTypeLabels,
+  recordClassLabels,
+  strategicTagLabels,
+  formatLabels,
+  buyerTypeLabels,
+  evidenceTierLabels,
+  confidenceLabels,
+  actionRouteLabels,
+};
