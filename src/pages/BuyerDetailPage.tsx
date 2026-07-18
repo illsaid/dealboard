@@ -2,7 +2,42 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, HelpCircle, Lock, ArrowRight } from 'lucide-react';
 import { useBuyerById, useRecordsForBuyer } from '../data/useDataService';
 import { pluralize } from '../data/service';
-import { BuyerTypeBadge, ConfidenceBadge, FormatBadge, RecordClassBadge } from '../components/Badges';
+import { BuyerTypeBadge, FormatBadge, RecordClassBadge } from '../components/Badges';
+import type { Confidence } from '../data/types';
+
+function formatVerifiedDate(dateStr: string): string {
+  if (!dateStr) return '\u2014';
+  const d = new Date(dateStr + 'T00:00:00');
+  const day = d.getDate();
+  const month = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+  const year = String(d.getFullYear()).slice(2);
+  return `${day} ${month} ${year}`;
+}
+
+function ConfidenceMark({ confidence }: { confidence: Confidence }) {
+  if (confidence === 'high') {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <span className="w-2.5 h-2.5 bg-signal"></span>
+        <span className="text-xs font-semibold text-inkred">High</span>
+      </span>
+    );
+  }
+  if (confidence === 'medium') {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <span className="w-2.5 h-2.5 border border-ink-400"></span>
+        <span className="text-xs font-semibold text-ink-500">Medium</span>
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="w-2.5 h-2.5 border border-ink-300"></span>
+      <span className="text-xs text-ink-400">Low</span>
+    </span>
+  );
+}
 
 export function BuyerDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +54,7 @@ export function BuyerDetailPage() {
   }
 
   const buyerRecords = records;
+  const hasActivity = buyer.recentActivity || buyer.activityTimeline.length > 0;
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
@@ -40,7 +76,14 @@ export function BuyerDetailPage() {
               {buyer.primaryFormats.map(f => <FormatBadge key={f} format={f} />)}
             </div>
           </div>
-          <ConfidenceBadge confidence={buyer.mandateConfidence} />
+        </div>
+        {/* Confidence + facts strip */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 py-3 border-t border-b border-ink-200 text-xs text-ink-500">
+          <ConfidenceMark confidence={buyer.mandateConfidence} />
+          <span className="text-ink-300">|</span>
+          <span><span className="font-semibold text-ink-700">{buyerRecords.length}</span> {pluralize(buyerRecords.length, 'record')}</span>
+          <span className="text-ink-300">|</span>
+          <span>Verified {formatVerifiedDate(buyer.lastVerified)}</span>
         </div>
         <p className="text-sm text-ink-700 mt-4 leading-relaxed">{buyer.description}</p>
       </header>
@@ -64,7 +107,7 @@ export function BuyerDetailPage() {
             </div>
           </div>
           <p className="text-xs text-ink-400 mt-3 pt-3 border-t border-ink-200">
-            Last buyer verification: {buyer.lastVerified}
+            Last buyer verification: {formatVerifiedDate(buyer.lastVerified)}
           </p>
         </div>
       </section>
@@ -89,19 +132,23 @@ export function BuyerDetailPage() {
         <p className="text-xs text-ink-400 mt-3 italic">Mandate inferred from public evidence. Not a confirmed commissioning brief.</p>
       </section>
 
-      {/* Recent Activity */}
-      <section className="mb-8 border-t border-ink-200 pt-4">
-        <h2 className="text-xs font-bold text-ink-900 uppercase tracking-[0.14em] mb-3">Recent Activity</h2>
-        <p className="text-sm text-ink-700 mb-4">{buyer.recentActivity}</p>
-        <div className="border-t border-b border-ink-200 divide-y divide-ink-100">
-          {buyer.activityTimeline.map((item, i) => (
-            <div key={i} className="py-3 flex items-start gap-3">
-              <span className="text-xs text-ink-400 whitespace-nowrap shrink-0 pt-0.5 font-semibold">{item.date}</span>
-              <span className="text-sm text-ink-700">{item.event}</span>
+      {/* Recent Activity — hidden when no content */}
+      {hasActivity && (
+        <section className="mb-8 border-t border-ink-200 pt-4">
+          <h2 className="text-xs font-bold text-ink-900 uppercase tracking-[0.14em] mb-3">Recent Activity</h2>
+          {buyer.recentActivity && <p className="text-sm text-ink-700 mb-4">{buyer.recentActivity}</p>}
+          {buyer.activityTimeline.length > 0 && (
+            <div className="border-t border-b border-ink-200 divide-y divide-ink-100">
+              {buyer.activityTimeline.map((item, i) => (
+                <div key={i} className="py-3 flex items-start gap-3">
+                  <span className="text-xs text-ink-400 whitespace-nowrap shrink-0 pt-0.5 font-semibold uppercase">{formatVerifiedDate(item.date)}</span>
+                  <span className="text-sm text-ink-700">{item.event}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
+          )}
+        </section>
+      )}
 
       {/* Related Records */}
       {buyerRecords.length > 0 && (
@@ -117,12 +164,12 @@ export function BuyerDetailPage() {
                   <span className="text-xs">Subscriber-only record</span>
                 </div>
               ) : (
-                <Link key={r.id} to={`/deals/${r.id}`} className="block py-3 hover:bg-cream-50 transition-colors -mx-2 px-2">
+                <Link key={r.id} to={`/deals/${r.id}`} className="block py-3 hover:bg-cream-50 transition-colors -mx-2 px-2 group">
                   <div className="flex items-center gap-2 mb-1">
                     <RecordClassBadge recordClass={r.recordClass} />
-                    <span className="text-xs text-ink-400">{r.date}</span>
+                    <span className="text-xs text-ink-400 uppercase">{formatVerifiedDate(r.date)}</span>
                   </div>
-                  <p className="text-sm font-medium text-ink-800">{r.headline}</p>
+                  <p className="text-sm font-medium text-ink-800 group-hover:text-inkred transition-colors">{r.headline}</p>
                 </Link>
               )
             ))}
@@ -148,7 +195,7 @@ export function BuyerDetailPage() {
         </section>
       )}
 
-      <div className="border-t border-ink-900 pt-4 text-xs text-ink-400">Last verified: {buyer.lastVerified}</div>
+      <div className="border-t border-ink-900 pt-4 text-xs text-ink-400">Last verified: {formatVerifiedDate(buyer.lastVerified)}</div>
     </div>
   );
 }

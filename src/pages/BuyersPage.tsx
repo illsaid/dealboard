@@ -9,6 +9,7 @@ import { PrototypeNotice } from '../components/PrototypeNotice';
 import type { BuyerType, Confidence, Buyer } from '../data/types';
 
 function formatVerifiedDate(dateStr: string): string {
+  if (!dateStr) return '\u2014';
   const d = new Date(dateStr + 'T00:00:00');
   const day = d.getDate();
   const month = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
@@ -60,13 +61,23 @@ export function BuyersPage() {
   const recordCountByBuyer = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const r of allRecords) {
-      counts[r.buyerId] = (counts[r.buyerId] || 0) + 1;
-      for (const sid of r.secondaryBuyerIds) {
-        counts[sid] = (counts[sid] || 0) + 1;
+      if (r.buyerId) {
+        counts[r.buyerId] = (counts[r.buyerId] || 0) + 1;
+      }
+      if (r.secondaryBuyerIds) {
+        for (const sid of r.secondaryBuyerIds) {
+          counts[sid] = (counts[sid] || 0) + 1;
+        }
       }
     }
     return counts;
   }, [allRecords]);
+
+  function getRecordCount(buyer: Buyer): number {
+    const computed = recordCountByBuyer[buyer.id] || 0;
+    if (computed > 0) return computed;
+    return buyer.recordIds?.length || 0;
+  }
 
   const filtered = useMemo(() => {
     let results = allBuyers;
@@ -176,14 +187,14 @@ export function BuyersPage() {
           <div></div>
         </div>
         {filtered.map(buyer => (
-          <BuyerDesktopRow key={buyer.id} buyer={buyer} recordCount={recordCountByBuyer[buyer.id] || 0} />
+          <BuyerDesktopRow key={buyer.id} buyer={buyer} recordCount={getRecordCount(buyer)} />
         ))}
       </div>
 
       {/* Mobile ledger */}
       <div className="md:hidden border-t-2 border-b border-ink-900 divide-y divide-ink-100">
         {filtered.map(buyer => (
-          <BuyerMobileRow key={buyer.id} buyer={buyer} recordCount={recordCountByBuyer[buyer.id] || 0} />
+          <BuyerMobileRow key={buyer.id} buyer={buyer} recordCount={getRecordCount(buyer)} />
         ))}
       </div>
     </div>
@@ -234,8 +245,13 @@ function BuyerMobileRow({ buyer, recordCount }: { buyer: Buyer; recordCount: num
       </div>
       <div className="mt-2 text-xs text-ink-600 space-y-1">
         <p><span className="text-ink-400">Mandate:</span> {buyer.currentMandate}</p>
-        <p><span className="text-ink-400">Confidence:</span> <ConfidenceMark confidence={buyer.mandateConfidence} /></p>
-        <p><span className="text-ink-400">Formats:</span> {buyer.primaryFormats.length > 0 ? buyer.primaryFormats.map(f => <FormatBadge key={f} format={f} />) : <span className="text-ink-300">&mdash;</span>}</p>
+        <p className="flex items-center gap-1"><span className="text-ink-400">Confidence:</span> <ConfidenceMark confidence={buyer.mandateConfidence} /></p>
+        <p><span className="text-ink-400">Formats:</span>{' '}
+          {buyer.primaryFormats.length > 0
+            ? buyer.primaryFormats.map((f, i) => <span key={f}>{i > 0 && ', '}<FormatBadge format={f} /></span>)
+            : <span className="text-ink-300">&mdash;</span>
+          }
+        </p>
         <p><span className="text-ink-400">Verified:</span> {formatVerifiedDate(buyer.lastVerified)}</p>
         <p><span className="text-ink-400">Records:</span> {recordCount}</p>
       </div>
