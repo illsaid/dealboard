@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/modernist-b6049391-b398-416e-9860-913cc57b4c66/styles.css">
+  <script src="_ds/modernist-b6049391-b398-416e-9860-913cc57b4c66/_ds_bundle.js"></script>
+  <style>
+    a { color: var(--color-accent-700); }
+    a:hover { color: var(--color-accent); }
+    /* Contrast: deep red for small interactive text/fills; bright red reserved for display type and index numbers */
+    .btn-primary { background: var(--color-accent-700); border-color: var(--color-accent-700); }
+    .btn-primary:hover { background: var(--color-accent-800); border-color: var(--color-accent-800); }
+    .seg-opt input:checked + span, .seg-opt:has(input:checked) { background: var(--color-accent-700); color: var(--color-bg); }
+    nav.nav a[aria-current="page"] { color: var(--color-accent-700); }
+    [data-m="menu"] { display: none; }
+    [data-m="mlabel"] { display: none; }
+    @media (max-width: 720px) {
+      [data-m="collapse"] { grid-template-columns: 1fr !important; }
+      [data-m="hide"] { display: none !important; }
+      [data-m="mlabel"] { display: block !important; }
+      nav.nav > a:not(.btn) { display: none; }
+      [data-m="menu"] { display: inline-flex !important; }
+    }
+  </style>
+</helmet>
+<div style="min-height:100vh;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body)">
+  <nav class="nav" data-screen-label="Masthead">
+    <span class="nav-brand" style="letter-spacing:-0.01em">THE PICKUP</span>
+    <a href="The Brief.dc.html">The Brief</a>
+    <a href="Deal Board.dc.html" aria-current="page" style="font-weight:600">Deal Board</a>
+    <a href="Buyers.dc.html">Buyers</a>
+    <a href="About.dc.html">About</a>
+    <button data-m="menu" aria-label="Menu" style="background:none;border:1px solid var(--color-text);width:40px;height:40px;padding:0;color:var(--color-text);align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg></button><a class="btn btn-primary" href="https://thepickupco.substack.com" target="_blank" rel="noopener" style="text-decoration:none;background:var(--color-accent-700);border-color:var(--color-accent-700)">Subscribe</a>
+  </nav>
+
+  <main style="max-width:1160px;margin:0 auto;padding:0 var(--space-8)">
+    <div style="padding:var(--space-4) 0">
+      <a href="Deal Board.dc.html" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:800">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M19 12H5"></path><path d="m12 19-7-7 7-7"></path></svg>
+        Deal Board
+      </a>
+    </div>
+
+    <header data-screen-label="Record header" data-m="collapse" style="display:grid;grid-template-columns:96px 1fr;gap:var(--space-4);padding:var(--space-4) 0 var(--space-6);border-top:2px solid var(--color-divider);border-bottom:2px solid var(--color-divider)">
+      <div style="font-family:var(--font-heading);font-weight:800;font-size:40px;line-height:1;color:var(--color-accent)">05</div>
+      <div>
+        <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;margin-bottom:var(--space-3)">
+          <span style="color:var(--color-accent-700)">Confirmed deal</span>
+          <span class="text-muted">Development — Legacy crossover — Creator-led — Unscripted</span>
+        </div>
+        <h1 style="font-size:clamp(36px,4.5vw,60px);line-height:1;letter-spacing:-0.02em;margin-bottom:var(--space-3);max-width:22ch">Golf Channel confirms Big Break x Good Good August rollout</h1>
+        <div style="display:flex;gap:var(--space-4);flex-wrap:wrap;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600">
+          <span>Golf Channel</span>
+          <span class="text-muted">Announced 15 Jul 26</span>
+          <span class="text-muted">Captured 17 Jul 26</span>
+          <span class="text-muted">North America</span>
+          <span style="color:var(--color-accent-700)">Tier 1 — Medium mandate confidence</span>
+        </div>
+      </div>
+    </header>
+
+    <section data-screen-label="Event summary" data-m="collapse" style="display:grid;grid-template-columns:96px 1fr;gap:var(--space-4);padding:var(--space-6) 0;border-bottom:1px solid var(--color-divider)">
+      <h6 style="margin:0">Event summary</h6>
+      <p style="font-size:17px;line-height:1.6;max-width:66ch;margin:0">Golf Channel confirmed the August 25 premiere of Big Break x Good Good presented by Golf Galaxy, a 10-episode return of its golf reality competition series. The season is produced in partnership with Good Good Golf and features Good Good members as competitors, reporter and non-playing captain. Episodes will stream on GolfPass the day after linear airing, and the winner earns a place in the PGA Tour's Good Good Championship. The underlying partnership was announced earlier in 2026; this release confirms active production and rollout.</p>
+    </section>
+
+    <section data-screen-label="Verified facts" data-m="collapse" style="display:grid;grid-template-columns:96px 1fr;gap:var(--space-4);padding:var(--space-6) 0;border-bottom:1px solid var(--color-divider)">
+      <h6 style="margin:0;color:var(--color-accent-700)">Verified facts</h6>
+      <div style="display:flex;flex-direction:column">
+        <div style="display:grid;grid-template-columns:24px 1fr;gap:var(--space-2);padding:var(--space-2) 0;border-bottom:1px solid var(--color-divider)">
+          <span style="width:8px;height:8px;background:var(--color-accent);margin-top:7px"></span>
+          <p style="margin:0;font-size:15px;max-width:66ch">Big Break x Good Good premieres August 25 on Golf Channel.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:24px 1fr;gap:var(--space-2);padding:var(--space-2) 0;border-bottom:1px solid var(--color-divider)">
+          <span style="width:8px;height:8px;background:var(--color-accent);margin-top:7px"></span>
+          <p style="margin:0;font-size:15px;max-width:66ch">The season runs for 10 episodes and streams next day on GolfPass.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:24px 1fr;gap:var(--space-2);padding:var(--space-2) 0;border-bottom:1px solid var(--color-divider)">
+          <span style="width:8px;height:8px;background:var(--color-accent);margin-top:7px"></span>
+          <p style="margin:0;font-size:15px;max-width:66ch">Good Good Golf members Sean Walsh and Matt Meneghetti compete; Matt Scharff reports; Tom Broders and Brad Dalke serve as non-playing captains.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:24px 1fr;gap:var(--space-2);padding:var(--space-2) 0;border-bottom:1px solid var(--color-divider)">
+          <span style="width:8px;height:8px;background:var(--color-accent);margin-top:7px"></span>
+          <p style="margin:0;font-size:15px;max-width:66ch">Golf Galaxy is the presenting sponsor and Trex is an official sponsor.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:24px 1fr;gap:var(--space-2);padding:var(--space-2) 0;border-bottom:1px solid var(--color-divider)">
+          <span style="width:8px;height:8px;background:var(--color-accent);margin-top:7px"></span>
+          <p style="margin:0;font-size:15px;max-width:66ch">The winner receives an exemption into the 2026 PGA Tour Good Good Championship.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:24px 1fr;gap:var(--space-2);padding:var(--space-2) 0">
+          <span style="width:8px;height:8px;background:var(--color-accent);margin-top:7px"></span>
+          <p style="margin:0;font-size:15px;max-width:66ch">The Golf Channel release confirms rollout of a partnership announced earlier in 2026.</p>
+        </div>
+      </div>
+    </section>
+
+    <sc-if value="{{ showInterpretation }}" hint-placeholder-val="{{ true }}">
+      <section data-screen-label="Interpretation" data-m="collapse" style="display:grid;grid-template-columns:96px 1fr;gap:var(--space-4);padding:var(--space-6) 0;border-bottom:1px solid var(--color-divider)">
+        <h6 style="margin:0">Interpretation</h6>
+        <div style="border-left:4px solid var(--color-accent);padding:var(--space-3) var(--space-4);background:var(--color-surface)">
+          <p style="font-size:15px;line-height:1.6;max-width:64ch;margin:0 0 var(--space-2)">The deal demonstrates a mature creator-to-legacy-media structure: Good Good contributes talent, community and tournament equity, while Golf Channel supplies the format, linear reach, GolfPass extension and sponsor inventory. It is a production and distribution crossover, not evidence that Golf Channel is broadly open to creator pitches.</p>
+          <p style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:800;margin:0;color:var(--color-accent-700)">Analysis — not verified fact</p>
+        </div>
+      </section>
+    </sc-if>
+
+    <section data-screen-label="Why it matters" data-m="collapse" style="display:grid;grid-template-columns:96px 1fr;gap:var(--space-4);padding:var(--space-6) 0;border-bottom:1px solid var(--color-divider)">
+      <h6 style="margin:0">Why it matters</h6>
+      <p style="font-family:var(--font-heading);font-weight:600;font-size:21px;line-height:1.35;max-width:48ch;margin:0">Golf Channel is using a creator-led golf brand to revive a legacy reality format across linear television, GolfPass and sponsor integrations.</p>
+    </section>
+
+    <section data-screen-label="Professional action" data-m="collapse" style="display:grid;grid-template-columns:96px 1fr;gap:var(--space-4);padding:var(--space-6) 0;border-bottom:1px solid var(--color-divider)">
+      <h6 style="margin:0">Professional action</h6>
+      <div>
+        <div style="display:flex;gap:var(--space-3);align-items:center;margin-bottom:var(--space-2)">
+          <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:800;border:1px solid var(--color-divider);padding:3px 10px">Route: not researched</span>
+        </div>
+        <p style="font-size:15px;margin:0;max-width:64ch" class="text-muted">Dedicated route research has not yet been completed for this record.</p>
+      </div>
+    </section>
+
+    <section data-screen-label="Evidence" data-m="collapse" style="display:grid;grid-template-columns:96px 1fr;gap:var(--space-4);padding:var(--space-6) 0;border-bottom:2px solid var(--color-divider)">
+      <h6 style="margin:0">Evidence</h6>
+      <div style="display:flex;gap:var(--space-6);flex-wrap:wrap;align-items:baseline">
+        <a href="#" style="display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:14px">Primary source — Golf Channel release
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M7 17 17 7"></path><path d="M8 7h9v9"></path></svg>
+        </a>
+        <span style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600" class="text-muted">Tier 1 — Primary public evidence</span>
+        <span style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600" class="text-muted">Last verified 17 Jul 26</span>
+      </div>
+    </section>
+
+    <section data-screen-label="Related buyer" data-m="collapse" style="display:grid;grid-template-columns:96px 1fr;gap:var(--space-4);padding:var(--space-6) 0 var(--space-8)">
+      <h6 style="margin:0">Related buyer</h6>
+      <div data-m="collapse" style="display:grid;grid-template-columns:260px 1fr 160px;gap:var(--space-4);align-items:start;border-top:2px solid var(--color-divider);border-bottom:1px solid var(--color-divider);padding:var(--space-4) 0">
+        <div>
+          <h4 style="font-size:18px;margin-bottom:2px">Golf Channel</h4>
+          <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase" class="text-muted">Digital platform — Primary buyer</div>
+        </div>
+        <p style="font-size:14px;margin:0;max-width:60ch">Current 2026 programming includes Big Break x Good Good, a 10-episode return of the golf reality competition series produced in partnership with Good Good Golf and supported by Golf Galaxy, GolfPass and Trex integrations.</p>
+        <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600">
+          <div style="display:flex;align-items:center;gap:8px;color:var(--color-neutral-600);font-weight:800">
+            <span style="width:10px;height:10px;flex:none;border:2px solid var(--color-neutral-600)"></span>
+            Medium
+          </div>
+          <a href="Buyer Profile.dc.html" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:800;margin-top:var(--space-2)">Profile
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer style="border-top:2px solid var(--color-divider);padding:var(--space-4) var(--space-8)">
+    <div style="max-width:1160px;margin:0 auto;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:var(--space-2)">
+      <span style="font-family:var(--font-heading);font-weight:800;font-size:14px;letter-spacing:0.02em">THE PICKUP</span>
+      <span style="font-size:12px" class="text-muted">Live data from verified editorial sources.</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;showInterpretation&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Sections&quot;}
+}">
+class Component extends DCLogic {
+  renderVals() {
+    return { showInterpretation: this.props.showInterpretation ?? true };
+  }
+}
+</script>
+</body>
+</html>

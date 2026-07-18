@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/modernist-b6049391-b398-416e-9860-913cc57b4c66/styles.css">
+  <script src="_ds/modernist-b6049391-b398-416e-9860-913cc57b4c66/_ds_bundle.js"></script>
+  <style>
+    a { color: var(--color-accent-700); }
+    a:hover { color: var(--color-accent); }
+    /* Contrast: deep red for small interactive text/fills; bright red reserved for display type and index numbers */
+    .btn-primary { background: var(--color-accent-700); border-color: var(--color-accent-700); }
+    .btn-primary:hover { background: var(--color-accent-800); border-color: var(--color-accent-800); }
+    .seg-opt input:checked + span, .seg-opt:has(input:checked) { background: var(--color-accent-700); color: var(--color-bg); }
+    nav.nav a[aria-current="page"] { color: var(--color-accent-700); }
+    [data-m="menu"] { display: none; }
+    [data-m="mlabel"] { display: none; }
+    @media (max-width: 720px) {
+      [data-m="collapse"] { grid-template-columns: 1fr !important; }
+      [data-m="hide"] { display: none !important; }
+      [data-m="mlabel"] { display: block !important; }
+      nav.nav > a:not(.btn) { display: none; }
+      [data-m="menu"] { display: inline-flex !important; }
+    }
+  </style>
+</helmet>
+<div style="min-height:100vh;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body)">
+  <nav class="nav" data-screen-label="Masthead">
+    <span class="nav-brand" style="letter-spacing:-0.01em">THE PICKUP</span>
+    <a href="The Brief.dc.html">The Brief</a>
+    <a href="Deal Board.dc.html">Deal Board</a>
+    <a href="Buyers.dc.html" aria-current="page" style="font-weight:600">Buyers</a>
+    <a href="About.dc.html">About</a>
+    <button data-m="menu" aria-label="Menu" style="background:none;border:1px solid var(--color-text);width:40px;height:40px;padding:0;color:var(--color-text);align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg></button><a class="btn btn-primary" href="https://thepickupco.substack.com" target="_blank" rel="noopener" style="text-decoration:none;background:var(--color-accent-700);border-color:var(--color-accent-700)">Subscribe</a>
+  </nav>
+
+  <main style="max-width:1160px;margin:0 auto;padding:0 var(--space-8)">
+    <div style="padding:var(--space-4) 0">
+      <a href="Buyers.dc.html" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:800">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M19 12H5"></path><path d="m12 19-7-7 7-7"></path></svg>
+        Buyer Directory
+      </a>
+    </div>
+
+    <header data-screen-label="Buyer header" data-m="collapse" style="display:grid;grid-template-columns:1fr 280px;gap:var(--space-6);padding:var(--space-4) 0 var(--space-6);border-top:2px solid var(--color-divider);border-bottom:2px solid var(--color-divider);align-items:start">
+      <div>
+        <div style="font-size:12px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;margin-bottom:var(--space-2)" class="text-muted">Digital platform — Global</div>
+        <h1 style="font-size:clamp(48px,6vw,80px);line-height:0.95;letter-spacing:-0.03em;text-transform:uppercase;margin-bottom:var(--space-3)">MrBeast</h1>
+        <p style="font-size:16px;line-height:1.6;max-width:58ch;margin:0">Building an AI-native consumer membership ecosystem around its 100M+ audience — combining interactive member experiences, first-party audience intelligence, and tools for creators, brands, and fans.</p>
+      </div>
+      <div style="border-left:2px solid var(--color-divider);padding-left:var(--space-4);display:flex;flex-direction:column;gap:var(--space-3)">
+        <div>
+          <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px" class="text-muted">Mandate confidence</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:14px;letter-spacing:0.08em;text-transform:uppercase;font-weight:800;color:var(--color-neutral-600)">
+            <span style="width:12px;height:12px;flex:none;border:2px solid var(--color-neutral-600)"></span>
+            Medium
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px" class="text-muted">Deal Board records</div>
+          <div style="font-family:var(--font-heading);font-weight:800;font-size:32px;line-height:1">1</div>
+        </div>
+        <div>
+          <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px" class="text-muted">Last verified</div>
+          <div style="font-size:13px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600">17 Jul 26</div>
+        </div>
+      </div>
+    </header>
+
+    <section data-screen-label="Mandate" data-m="collapse" style="display:grid;grid-template-columns:280px 1fr;gap:var(--space-6);padding:var(--space-6) 0;border-bottom:2px solid var(--color-divider)">
+      <h6 style="margin:0;color:var(--color-accent-700)">Current apparent mandate</h6>
+      <div>
+        <p style="font-family:var(--font-heading);font-weight:600;font-size:22px;line-height:1.4;max-width:44ch;margin:0 0 var(--space-4)">A zero-to-one consumer membership ecosystem anchored around the MrBeast audience — spanning interactive digital experiences, real-world value, and tools that connect creators, brands, and fans at global scale.</p>
+        <div style="border-top:1px solid var(--color-divider);padding-top:var(--space-3)">
+          <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:800;margin-bottom:var(--space-2)">Supporting evidence</div>
+          <div style="display:grid;grid-template-columns:24px 1fr;gap:var(--space-2)">
+            <span style="width:8px;height:8px;background:var(--color-accent);margin-top:7px"></span>
+            <p style="margin:0;font-size:14px;max-width:64ch" class="text-muted">LinkedIn jobs 4441669390 and 4441674049 describe a zero-to-one AI-first build: privacy-safe audience understanding and partner decision support alongside consumer-facing membership-platform features, real-world value, and creator-brand-fan tools.</p>
+          </div>
+        </div>
+        <p style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:800;margin:var(--space-3) 0 0;color:var(--color-accent-700)">Inferred from public evidence — not a confirmed commissioning brief</p>
+      </div>
+    </section>
+
+    <section data-screen-label="Records" data-m="collapse" style="display:grid;grid-template-columns:280px 1fr;gap:var(--space-6);padding:var(--space-6) 0;border-bottom:2px solid var(--color-divider)">
+      <h6 style="margin:0">Deal Board records</h6>
+      <div>
+        <article data-m="collapse" style="display:grid;grid-template-columns:96px 1fr 180px;gap:var(--space-4);border-top:2px solid var(--color-divider);border-bottom:1px solid var(--color-divider);padding:var(--space-4) 0">
+          <div>
+            <div style="font-family:var(--font-heading);font-weight:800;font-size:20px;line-height:1.2">01</div>
+            <div style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;margin-top:4px" class="text-muted">Signal</div>
+          </div>
+          <div>
+            <h4 style="margin-bottom:var(--space-1);max-width:52ch">MrBeast builds a 100M+ membership ecosystem for creators, brands, and fans</h4>
+            <p style="font-size:14px;margin:0;max-width:60ch" class="text-muted">Job activity points to an AI-first membership platform spanning content, commerce and audience tools.</p>
+          </div>
+          <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600">
+            <div class="text-muted">17 Jul 26 — Tier 3</div>
+            <a href="Record.dc.html" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:800;margin-top:var(--space-2)">Record
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+            </a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section data-screen-label="Route dossier" data-m="collapse" style="display:grid;grid-template-columns:280px 1fr;gap:var(--space-6);padding:var(--space-6) 0;border-bottom:2px solid var(--color-divider)">
+      <h6 style="margin:0;color:var(--color-accent-700)">Route dossier</h6>
+      <div>
+        <div style="display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap;margin-bottom:var(--space-3)">
+          <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:800;border:1px solid var(--color-text);padding:3px 10px">Route: researched — none identified</span>
+          <span style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600" class="text-muted">Last checked 17 Jul 26</span>
+        </div>
+        <p style="font-family:var(--font-heading);font-weight:600;font-size:18px;line-height:1.45;max-width:52ch;margin:0 0 var(--space-3)">There is currently no public pitch, submission, or commissioning route into this buyer. Hiring is for platform and product roles, not content acquisition.</p>
+        <div style="border-top:1px solid var(--color-divider);padding-top:var(--space-3)">
+          <div style="display:grid;grid-template-columns:24px 1fr;gap:var(--space-2)">
+            <span style="width:8px;height:8px;border:2px solid var(--color-text);margin-top:6px"></span>
+            <p style="margin:0;font-size:14px;max-width:64ch" class="text-muted">No public route identified as of 17 Jul 26 — careers pages and public channels list no content-submission or commissioning process.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section data-screen-label="Open questions" data-m="collapse" style="display:grid;grid-template-columns:280px 1fr;gap:var(--space-6);padding:var(--space-6) 0 var(--space-8)">
+      <h6 style="margin:0">Open questions</h6>
+      <div style="display:flex;flex-direction:column">
+        <div style="display:grid;grid-template-columns:24px 1fr;gap:var(--space-2);padding:var(--space-2) 0;border-bottom:1px solid var(--color-divider)">
+          <span style="width:8px;height:8px;border:2px solid var(--color-text);margin-top:6px"></span>
+          <p style="margin:0;font-size:15px;max-width:62ch">What specific membership benefits and commercial products are planned?</p>
+        </div>
+        <div style="display:grid;grid-template-columns:24px 1fr;gap:var(--space-2);padding:var(--space-2) 0;border-bottom:1px solid var(--color-divider)">
+          <span style="width:8px;height:8px;border:2px solid var(--color-text);margin-top:6px"></span>
+          <p style="margin:0;font-size:15px;max-width:62ch">Which creator and brand integrations will launch first?</p>
+        </div>
+        <div style="display:grid;grid-template-columns:24px 1fr;gap:var(--space-2);padding:var(--space-2) 0;border-bottom:1px solid var(--color-divider)">
+          <span style="width:8px;height:8px;border:2px solid var(--color-text);margin-top:6px"></span>
+          <p style="margin:0;font-size:15px;max-width:62ch">Does the platform create a new content-acquisition or commissioning route?</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer style="border-top:2px solid var(--color-divider);padding:var(--space-4) var(--space-8)">
+    <div style="max-width:1160px;margin:0 auto;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:var(--space-2)">
+      <span style="font-family:var(--font-heading);font-weight:800;font-size:14px;letter-spacing:0.02em">THE PICKUP</span>
+      <span style="font-size:12px" class="text-muted">Live data from verified editorial sources.</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+</body>
+</html>

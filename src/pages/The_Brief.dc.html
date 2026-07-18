@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/modernist-b6049391-b398-416e-9860-913cc57b4c66/styles.css">
+  <script src="_ds/modernist-b6049391-b398-416e-9860-913cc57b4c66/_ds_bundle.js"></script>
+  <style>
+    a { color: var(--color-accent-700); }
+    a:hover { color: var(--color-accent); }
+    /* Contrast: deep red for small interactive text/fills; bright red reserved for display type and index numbers */
+    .btn-primary { background: var(--color-accent-700); border-color: var(--color-accent-700); }
+    .btn-primary:hover { background: var(--color-accent-800); border-color: var(--color-accent-800); }
+    .seg-opt input:checked + span, .seg-opt:has(input:checked) { background: var(--color-accent-700); color: var(--color-bg); }
+    nav.nav a[aria-current="page"] { color: var(--color-accent-700); }
+    [data-m="menu"] { display: none; }
+    [data-m="mlabel"] { display: none; }
+    @media (max-width: 720px) {
+      [data-m="collapse"] { grid-template-columns: 1fr !important; }
+      [data-m="hide"] { display: none !important; }
+      [data-m="mlabel"] { display: block !important; }
+      nav.nav > a:not(.btn) { display: none; }
+      [data-m="menu"] { display: inline-flex !important; }
+    }
+  </style>
+</helmet>
+<div style="min-height:100vh;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body)">
+  <nav class="nav" data-screen-label="Masthead">
+    <span class="nav-brand" style="letter-spacing:-0.01em">THE PICKUP</span>
+    <a href="The Brief.dc.html" aria-current="page" style="font-weight:600">The Brief</a>
+    <a href="Deal Board.dc.html">Deal Board</a>
+    <a href="Buyers.dc.html">Buyers</a>
+    <a href="About.dc.html">About</a>
+    <button data-m="menu" aria-label="Menu" style="background:none;border:1px solid var(--color-text);width:40px;height:40px;padding:0;color:var(--color-text);align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg></button><a class="btn btn-primary" href="https://thepickupco.substack.com" target="_blank" rel="noopener" style="text-decoration:none;background:var(--color-accent-700);border-color:var(--color-accent-700)">Subscribe</a>
+  </nav>
+
+  <header data-screen-label="Issue banner" style="background:var(--color-accent);color:var(--color-bg);padding:var(--space-8) var(--space-8) var(--space-6)">
+    <div style="max-width:1160px;margin:0 auto">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--color-bg);padding-bottom:var(--space-2);font-size:12px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:var(--color-text)">
+        <span>Entertainment buyer intelligence</span>
+        <span>Published every Friday</span>
+      </div>
+      <h1 style="font-size:clamp(64px,9vw,128px);line-height:0.95;letter-spacing:-0.03em;margin:var(--space-4) 0 var(--space-3);text-transform:uppercase">The Brief</h1>
+      <div style="display:flex;gap:var(--space-6);flex-wrap:wrap;font-size:14px;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;color:var(--color-text)">
+        <span>No. 34</span>
+        <span>Week of 13–17 Jul 2026</span>
+        <span>11 new records</span>
+      </div>
+    </div>
+  </header>
+
+  <main style="max-width:1160px;margin:0 auto;padding:0 var(--space-8)">
+
+    <section data-screen-label="Week at a glance" data-m="collapse" style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:2px solid var(--color-divider)">
+      <div style="padding:var(--space-4) var(--space-4) var(--space-4) 0;border-right:1px solid var(--color-divider)">
+        <div style="font-family:var(--font-heading);font-weight:800;font-size:40px;line-height:1">6</div>
+        <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase" class="text-muted">Confirmed deals</div>
+      </div>
+      <div style="padding:var(--space-4);border-right:1px solid var(--color-divider)">
+        <div style="font-family:var(--font-heading);font-weight:800;font-size:40px;line-height:1">5</div>
+        <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase" class="text-muted">Developing signals</div>
+      </div>
+      <div style="padding:var(--space-4);border-right:1px solid var(--color-divider)">
+        <div style="font-family:var(--font-heading);font-weight:800;font-size:40px;line-height:1">13</div>
+        <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase" class="text-muted">Active buyers</div>
+      </div>
+      <div style="padding:var(--space-4)">
+        <div style="font-family:var(--font-heading);font-weight:800;font-size:40px;line-height:1">4</div>
+        <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase" class="text-muted">Legacy crossovers</div>
+      </div>
+    </section>
+
+    <section data-screen-label="Lead story" data-m="collapse" style="display:grid;grid-template-columns:96px 1fr;gap:var(--space-4);padding:var(--space-8) 0;border-bottom:2px solid var(--color-divider)">
+      <div style="font-family:var(--font-heading);font-weight:800;font-size:40px;line-height:1;color:var(--color-accent)">01</div>
+      <div>
+        <div style="display:flex;gap:var(--space-3);font-size:12px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;margin-bottom:var(--space-3)">
+          <span style="color:var(--color-accent-700)">Confirmed deal</span>
+          <span class="text-muted">Microdrama — Vertical</span>
+        </div>
+        <h2 style="font-size:clamp(32px,4vw,52px);line-height:1.02;letter-spacing:-0.02em;margin-bottom:var(--space-3);max-width:20ch">ReelShort and WWE form an original live-action microdrama partnership</h2>
+        <p style="font-size:17px;max-width:62ch;margin-bottom:var(--space-3)">A major sports-entertainment IP owner has entered an original vertical-fiction production relationship with ReelShort — the clearest sign yet that established IP holders see microdrama as a distribution channel, not a novelty.</p>
+        <div style="display:flex;gap:var(--space-4);align-items:center;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600">
+          <span>ReelShort</span>
+          <span class="text-muted">Verified 14 Jul 26 — Tier 1</span>
+          <a href="Record.dc.html" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:800;color:var(--color-accent-700)">Read the record
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section data-screen-label="Confirmed deals">
+      <h6 style="padding:var(--space-3) 0;margin:0;border-bottom:2px solid var(--color-divider);color:var(--color-accent-700)">Confirmed this week</h6>
+
+      <article data-m="collapse" style="display:grid;grid-template-columns:96px 1fr 220px;gap:var(--space-4);padding:var(--space-4) 0;border-bottom:1px solid var(--color-divider)">
+        <div style="font-family:var(--font-heading);font-weight:800;font-size:22px;line-height:1.2">02</div>
+        <div>
+          <h4 style="margin-bottom:var(--space-1)">Netflix brings Alan's Universe to the platform day-and-date with YouTube</h4>
+          <p style="font-size:14px;margin:0;max-width:64ch" class="text-muted">An existing scripted, Shorts-native creator franchise goes global on a day-and-date basis — non-exclusivity as strategy.</p>
+        </div>
+        <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;text-align:left">
+          <div>Netflix</div>
+          <div class="text-muted">17 Jul 26 — Creator-led</div>
+        </div>
+      </article>
+
+      <article data-m="collapse" style="display:grid;grid-template-columns:96px 1fr 220px;gap:var(--space-4);padding:var(--space-4) 0;border-bottom:1px solid var(--color-divider)">
+        <div style="font-family:var(--font-heading);font-weight:800;font-size:22px;line-height:1.2">03</div>
+        <div>
+          <h4 style="margin-bottom:var(--space-1)">TrueID and DramaBox launch Tatang vertical-drama mini-app in Thailand</h4>
+          <p style="font-size:14px;margin:0;max-width:64ch" class="text-muted">Vertical drama placed inside a payments-and-rewards ecosystem, creating a new local distribution path.</p>
+        </div>
+        <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600">
+          <div>TrueID</div>
+          <div class="text-muted">17 Jul 26 — Vertical</div>
+        </div>
+      </article>
+
+      <article data-m="collapse" style="display:grid;grid-template-columns:96px 1fr 220px;gap:var(--space-4);padding:var(--space-4) 0;border-bottom:1px solid var(--color-divider)">
+        <div style="font-family:var(--font-heading);font-weight:800;font-size:22px;line-height:1.2">04</div>
+        <div>
+          <h4 style="margin-bottom:var(--space-1)">Scrambled Up renewed for Season 2 with Samsung TV Plus next-day window</h4>
+          <p style="font-size:14px;margin:0;max-width:64ch" class="text-muted">A syndicated daily game show pairs its renewal with next-day availability on a dedicated FAST channel.</p>
+        </div>
+        <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600">
+          <div>Samsung TV Plus</div>
+          <div class="text-muted">15 Jul 26 — FAST</div>
+        </div>
+      </article>
+
+      <article data-m="collapse" style="display:grid;grid-template-columns:96px 1fr 220px;gap:var(--space-4);padding:var(--space-4) 0;border-bottom:1px solid var(--color-divider)">
+        <div style="font-family:var(--font-heading);font-weight:800;font-size:22px;line-height:1.2">05</div>
+        <div>
+          <h4 style="margin-bottom:var(--space-1)">Golf Channel confirms Big Break x Good Good August rollout</h4>
+          <p style="font-size:14px;margin:0;max-width:64ch" class="text-muted">A creator-led golf brand revives a legacy reality format across linear, GolfPass and sponsor integrations.</p>
+        </div>
+        <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600">
+          <div>Golf Channel</div>
+          <div class="text-muted">15 Jul 26 — Unscripted</div>
+        </div>
+      </article>
+
+      <article data-m="collapse" style="display:grid;grid-template-columns:96px 1fr 220px;gap:var(--space-4);padding:var(--space-4) 0;border-bottom:2px solid var(--color-divider)">
+        <div style="font-family:var(--font-heading);font-weight:800;font-size:22px;line-height:1.2">06</div>
+        <div>
+          <h4 style="margin-bottom:var(--space-1)">WEBTOON Productions and Espotlight sign Spanish-language Wattpad first-look pact</h4>
+          <p style="font-size:14px;margin:0;max-width:64ch" class="text-muted">A formalized Spanish-language screen-adaptation pipeline from digital-native IP.</p>
+        </div>
+        <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600">
+          <div>WEBTOON</div>
+          <div class="text-muted">14 Jul 26 — Series</div>
+        </div>
+      </article>
+    </section>
+
+    <sc-if value="{{ showSignals }}" hint-placeholder-val="{{ true }}">
+      <section data-screen-label="Signals">
+        <h6 style="padding:var(--space-3) 0;margin:0;border-bottom:2px solid var(--color-divider)">Developing signals</h6>
+        <div data-m="collapse" style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:2px solid var(--color-divider)">
+          <article style="padding:var(--space-4) var(--space-4) var(--space-4) 0;border-right:1px solid var(--color-divider)">
+            <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;margin-bottom:var(--space-2)" class="text-muted">07 — Tier 3</div>
+            <h5 style="margin-bottom:var(--space-1)">ReelShort expands Atlanta production hub</h5>
+            <p style="font-size:13px;margin:0" class="text-muted">Eight new series commissioned in June; job activity suggests continued US-original scale-up.</p>
+          </article>
+          <article style="padding:var(--space-4);border-right:1px solid var(--color-divider)">
+            <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;margin-bottom:var(--space-2)" class="text-muted">08 — Tier 3</div>
+            <h5 style="margin-bottom:var(--space-1)">Spotify pushes video-podcast distribution wider</h5>
+            <p style="font-size:13px;margin:0" class="text-muted">Observed pattern: global ad representation for established video franchises keeps expanding.</p>
+          </article>
+          <article style="padding:var(--space-4)">
+            <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;margin-bottom:var(--space-2)" class="text-muted">09 — Tier 3</div>
+            <h5 style="margin-bottom:var(--space-1)">Netflix licensing creator-led franchises</h5>
+            <p style="font-size:13px;margin:0" class="text-muted">A repeatable route is forming: established creator video licensed for worldwide distribution.</p>
+          </article>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ showTheRead }}" hint-placeholder-val="{{ true }}">
+      <section data-screen-label="The read" data-m="collapse" style="display:grid;grid-template-columns:96px 1fr;gap:var(--space-4);padding:var(--space-6) 0;border-bottom:2px solid var(--color-divider)">
+        <h6 style="margin:0;color:var(--color-accent-700)">The read</h6>
+        <p style="font-family:var(--font-heading);font-weight:600;font-size:22px;line-height:1.35;max-width:46ch;margin:0">The week's pattern is non-exclusivity. Netflix windowing day-and-date with YouTube, Samsung pairing syndication with FAST, WWE licensing into microdrama — buyers are buying reach, not lockups. Sellers holding out for exclusivity premiums are negotiating against last year's market.</p>
+      </section>
+    </sc-if>
+
+    <section data-screen-label="Subscribe" data-m="collapse" style="display:grid;grid-template-columns:96px 1fr;gap:var(--space-4);padding:var(--space-6) 0 var(--space-8);align-items:start">
+      <h6 style="margin:0">Next issue</h6>
+      <div>
+        <p style="font-family:var(--font-heading);font-weight:800;font-size:28px;line-height:1.1;letter-spacing:-0.01em;max-width:30ch;margin-bottom:var(--space-3)">No. 35 lands Friday 24 Jul. Get it in your inbox.</p>
+        <a class="btn btn-primary" href="https://thepickupco.substack.com" target="_blank" rel="noopener" style="text-decoration:none;background:var(--color-accent-700);border-color:var(--color-accent-700)">Subscribe on Substack
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M7 17 17 7"></path><path d="M8 7h9v9"></path></svg>
+        </a>
+        <p style="font-size:11px;margin-top:var(--space-2)" class="text-muted">Free weekly briefing, delivered through Substack.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer style="border-top:2px solid var(--color-divider);padding:var(--space-4) var(--space-8)">
+    <div style="max-width:1160px;margin:0 auto;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:var(--space-2)">
+      <span style="font-family:var(--font-heading);font-weight:800;font-size:14px;letter-spacing:0.02em">THE PICKUP</span>
+      <span style="font-size:12px" class="text-muted">The scoreboard for who's buying entertainment now.</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;showSignals&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Sections&quot;},
+  &quot;showTheRead&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Sections&quot;}
+}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      showSignals: this.props.showSignals ?? true,
+      showTheRead: this.props.showTheRead ?? true,
+    };
+  }
+}
+</script>
+</body>
+</html>
