@@ -1,13 +1,12 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, LayoutGrid, List, Clock, X, Lock, SlidersHorizontal } from 'lucide-react';
+import { Search, LayoutGrid, List, X, Lock, SlidersHorizontal, ArrowRight } from 'lucide-react';
 import { useRecords, useNewThisWeekCount, useUniqueBuyerNames } from '../data/useDataService';
 import { useData } from '../data/DataProvider';
 import { pluralize } from '../data/service';
-import { RecordCard } from '../components/RecordCard';
-import { RecordClassBadge, EvidenceBadge, ConfidenceBadge, ActionRouteBadge } from '../components/Badges';
+import { RecordClassBadge, StrategicTagBadge, FormatBadge, EvidenceBadge, ConfidenceBadge, ActionRouteBadge } from '../components/Badges';
 import { PrototypeNotice } from '../components/PrototypeNotice';
-import type { RecordType, Format, EvidenceTier, Confidence, Territory, ActionRouteStatus } from '../data/types';
+import type { RecordType, Format, EvidenceTier, Confidence, Territory, ActionRouteStatus, DealRecord } from '../data/types';
 
 type ViewMode = 'cards' | 'table';
 type SortMode = 'newest' | 'confidence' | 'buyer';
@@ -87,30 +86,36 @@ export function DealBoardPage() {
     return results;
   }, [allRecords, activeBoardView, search, filterBuyer, filterType, filterFormat, filterEvidence, filterConfidence, filterTerritory, filterAction, filterDateFrom, filterDateTo, sort]);
 
-  const updatedLabel = latestVerifiedDate
-    ? `Updated ${new Date(latestVerifiedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
-    : 'Updated July 14, 2026';
+  const updatedDate = latestVerifiedDate
+    ? new Date(latestVerifiedDate + 'T00:00:00')
+    : new Date('2026-07-14T00:00:00');
+  const updatedDay = updatedDate.getDate();
+  const updatedMonthYear = updatedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
       {!isLive && <PrototypeNotice />}
 
       <header className="mt-6 mb-6">
         <p className="kicker mb-2">Scoreboard</p>
-        <h1 className="text-3xl font-extrabold text-ink-900 font-display">Deal Board</h1>
-        <p className="text-sm text-ink-600 mt-1">Searchable intelligence on who's buying entertainment and what they're acquiring.</p>
+        <h1 className="text-5xl sm:text-6xl font-extrabold uppercase tracking-tight text-ink-900 font-display leading-none">Deal Board</h1>
+        <p className="text-sm text-ink-600 mt-3">Searchable intelligence on who's buying entertainment and what they're acquiring.</p>
       </header>
 
-      {/* Stats bar */}
-      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 mb-6 text-xs text-ink-500 border-t border-b border-ink-200 py-2">
-        <span>
-          <span className="text-2xl font-extrabold text-signal font-display">{newThisWeek}</span>{' '}
-          <span className="text-ink-500">new this week</span>
-        </span>
-        <span>{allRecords.length} published {pluralize(allRecords.length, 'record')}</span>
-        <span className="flex items-center gap-1">
-          <Clock size={12} /> {updatedLabel}
-        </span>
+      {/* Stat strip — three cells, 40px figures, vertical dividers */}
+      <div className="grid grid-cols-3 border-t-2 border-b border-ink-900 mb-6">
+        <div className="py-4 px-3 text-center border-r border-ink-200">
+          <p className="text-[40px] font-extrabold text-signal font-display leading-none">{newThisWeek}</p>
+          <p className="text-[11px] text-ink-500 mt-2 uppercase tracking-[0.1em]">New this week</p>
+        </div>
+        <div className="py-4 px-3 text-center border-r border-ink-200">
+          <p className="text-[40px] font-extrabold text-ink-900 font-display leading-none">{allRecords.length}</p>
+          <p className="text-[11px] text-ink-500 mt-2 uppercase tracking-[0.1em]">Published records</p>
+        </div>
+        <div className="py-4 px-3 text-center">
+          <p className="text-[40px] font-extrabold text-ink-900 font-display leading-none">{updatedDay}</p>
+          <p className="text-[11px] text-ink-500 mt-2 uppercase tracking-[0.1em]">{updatedMonthYear}</p>
+        </div>
       </div>
 
       {/* Search and Controls */}
@@ -138,7 +143,7 @@ export function DealBoardPage() {
           <button
             onClick={() => setView('cards')}
             className={`hidden md:inline-flex p-2 border ${view === 'cards' ? 'bg-ink-900 text-cream-50 border-ink-900' : 'text-ink-500 hover:text-ink-900 border-ink-300'}`}
-            aria-label="Card view"
+            aria-label="Ledger view"
           >
             <LayoutGrid size={14} />
           </button>
@@ -277,64 +282,154 @@ export function DealBoardPage() {
         )}
       </div>
 
-      {/* Results — mobile always shows cards regardless of view toggle */}
-      <div className="md:hidden grid grid-cols-1 gap-3">
-        {filtered.map(record => (
-          <RecordCard key={record.id} record={record} compact />
-        ))}
-      </div>
-
-      <div className="hidden md:block">
-        {view === 'cards' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filtered.map(record => (
-              <RecordCard key={record.id} record={record} compact />
-            ))}
-          </div>
+      {/* Ledger view — single-column, lead record + rows.
+          Mobile always shows ledger; desktop shows ledger unless table view is active. */}
+      <div className={view === 'table' ? 'md:hidden' : ''}>
+        {filtered.length === 0 ? (
+          <p className="py-12 text-center text-sm text-ink-500">No records match these filters.</p>
         ) : (
-          <div className="border-t border-b border-ink-900 overflow-hidden bg-white">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-ink-200 bg-cream-50">
-                  <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Date</th>
-                  <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Buyer</th>
-                  <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Headline</th>
-                  <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Class</th>
-                  <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Evidence</th>
-                  <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Confidence</th>
-                  <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Action</th>
-                  <th className="px-3 py-2"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-ink-100">
-                {filtered.map(record => (
-                  <tr key={record.id} className="hover:bg-cream-50 transition-colors">
-                    <td className="px-3 py-2.5 text-ink-500 whitespace-nowrap">{record.date}</td>
-                    <td className="px-3 py-2.5 font-medium text-ink-800 whitespace-nowrap">{record.buyer}</td>
-                    <td className="px-3 py-2.5 text-ink-700 max-w-xs">
-                      <span className="line-clamp-1">{record.headline}</span>
-                    </td>
-                    <td className="px-3 py-2.5"><RecordClassBadge recordClass={record.recordClass} /></td>
-                    <td className="px-3 py-2.5"><EvidenceBadge tier={record.evidenceTier} /></td>
-                    <td className="px-3 py-2.5"><ConfidenceBadge confidence={record.confidence} /></td>
-                    <td className="px-3 py-2.5"><ActionRouteBadge status={record.action.status} /></td>
-                    <td className="px-3 py-2.5">
-                      {record.locked ? (
-                        <Lock size={14} className="text-ink-300" />
-                      ) : (
-                        <Link to={`/deals/${record.id}`} className="text-xs font-semibold text-inkred hover:underline whitespace-nowrap">
-                          View
-                        </Link>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="border-t-2 border-ink-900">
+            <LeadRow record={filtered[0]} />
+            {filtered.slice(1).map((record, i) => (
+              <LedgerRow key={record.id} record={record} index={i + 2} />
+            ))}
           </div>
         )}
       </div>
+
+      {/* Table view — desktop only, when table view is active */}
+      {view === 'table' && (
+        <div className="hidden md:block border-t-2 border-ink-900 overflow-hidden bg-white">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-ink-200 bg-cream-50">
+                <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Date</th>
+                <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Buyer</th>
+                <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Headline</th>
+                <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Class</th>
+                <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Evidence</th>
+                <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Confidence</th>
+                <th className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">Action</th>
+                <th className="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-ink-100">
+              {filtered.map(record => (
+                <tr key={record.id} className="hover:bg-cream-50 transition-colors">
+                  <td className="px-3 py-2.5 text-ink-500 whitespace-nowrap">{record.date}</td>
+                  <td className="px-3 py-2.5 font-medium text-ink-800 whitespace-nowrap">{record.buyer}</td>
+                  <td className="px-3 py-2.5 text-ink-700 max-w-xs">
+                    <span className="line-clamp-1">{record.headline}</span>
+                  </td>
+                  <td className="px-3 py-2.5"><RecordClassBadge recordClass={record.recordClass} /></td>
+                  <td className="px-3 py-2.5"><EvidenceBadge tier={record.evidenceTier} /></td>
+                  <td className="px-3 py-2.5"><ConfidenceBadge confidence={record.confidence} /></td>
+                  <td className="px-3 py-2.5"><ActionRouteBadge status={record.action.status} /></td>
+                  <td className="px-3 py-2.5">
+                    {record.locked ? (
+                      <Lock size={14} className="text-ink-300" />
+                    ) : (
+                      <Link to={`/deals/${record.id}`} className="text-xs font-semibold text-inkred hover:underline whitespace-nowrap">
+                        View
+                      </Link>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
+  );
+}
+
+function LeadRow({ record }: { record: DealRecord }) {
+  if (record.locked) {
+    return (
+      <div className="py-6 flex items-start gap-4 border-b border-ink-100">
+        <span className="text-5xl font-extrabold text-signal font-display leading-none shrink-0">01</span>
+        <div className="flex-1 pt-1">
+          <div className="flex items-center gap-2 text-ink-400">
+            <Lock size={14} />
+            <span className="text-sm">Subscriber-only record</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Link to={`/deals/${record.id}`} className="block py-6 border-b border-ink-100 hover:bg-cream-50 transition-colors group">
+      <div className="flex items-start gap-4 sm:gap-6">
+        <span className="text-5xl sm:text-6xl font-extrabold text-signal font-display leading-none shrink-0">01</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2 items-center">
+            <RecordClassBadge recordClass={record.recordClass} />
+            {(record.strategicTags ?? []).map(tag => <StrategicTagBadge key={tag} tag={tag} />)}
+            <FormatBadge format={record.format} />
+          </div>
+          <h2 className="text-lg sm:text-xl font-bold text-ink-900 group-hover:text-inkred transition-colors leading-snug mb-1">{record.headline}</h2>
+          <p className="text-sm text-ink-600 leading-relaxed mb-2 line-clamp-2">{record.summary}</p>
+          <div className="flex items-center gap-3 text-xs text-ink-500">
+            <span className="font-medium text-ink-700">{record.buyer}</span>
+            <span className="text-ink-300">|</span>
+            <span>{record.date}</span>
+            <span className="text-ink-300">|</span>
+            <span className="inline-flex items-center gap-0.5 text-inkred font-semibold">
+              View record <ArrowRight size={11} />
+            </span>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function LedgerRow({ record, index }: { record: DealRecord; index: number }) {
+  const num = String(index).padStart(2, '0');
+
+  if (record.locked) {
+    return (
+      <div className="py-4 flex items-start gap-3 sm:gap-4 border-b border-ink-100">
+        <span className="text-sm font-bold text-ink-300 font-display shrink-0 w-6 sm:w-8 text-right">{num}</span>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 text-ink-400">
+            <Lock size={12} />
+            <span className="text-xs">Subscriber-only record</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Link to={`/deals/${record.id}`} className="block py-4 border-b border-ink-100 hover:bg-cream-50 transition-colors group">
+      <div className="grid grid-cols-[1.5rem_1fr] sm:grid-cols-[2rem_1fr_auto] gap-3 sm:gap-4 items-start">
+        <span className="text-sm font-bold text-ink-300 font-display shrink-0 text-right">{num}</span>
+        <div className="min-w-0">
+          <div className="flex flex-wrap gap-x-2 gap-y-1 mb-1 items-center">
+            <RecordClassBadge recordClass={record.recordClass} />
+            {(record.strategicTags ?? []).slice(0, 2).map(tag => <StrategicTagBadge key={tag} tag={tag} />)}
+            <FormatBadge format={record.format} />
+          </div>
+          <h3 className="text-sm font-bold text-ink-900 group-hover:text-inkred transition-colors leading-snug">{record.headline}</h3>
+          <p className="text-xs text-ink-500 line-clamp-1 mt-0.5 hidden sm:block">{record.summary}</p>
+          <div className="sm:hidden mt-1 text-xs text-ink-500">
+            <span className="font-medium text-ink-700">{record.buyer}</span>
+            <span className="text-ink-300"> · </span>
+            <span>{record.date}</span>
+          </div>
+        </div>
+        <div className="hidden sm:block text-xs text-ink-500 text-right whitespace-nowrap shrink-0">
+          <p className="font-medium text-ink-700">{record.buyer}</p>
+          <p>{record.date}</p>
+          <p className="text-inkred font-semibold mt-1 inline-flex items-center gap-0.5">
+            Record <ArrowRight size={10} />
+          </p>
+        </div>
+      </div>
+    </Link>
   );
 }
 
