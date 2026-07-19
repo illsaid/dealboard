@@ -7,7 +7,8 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems = [
-    { path: '/', label: 'Deal Board' },
+    { path: '/', label: 'Brief' },
+    { path: '/deals', label: 'Deal Board' },
     { path: '/buyers', label: 'Buyers' },
     { path: '/about', label: 'About' },
   ];

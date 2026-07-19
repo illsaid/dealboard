@@ -8,6 +8,7 @@ import { BuyersPage } from './pages/BuyersPage';
 import { BuyerDetailPage } from './pages/BuyerDetailPage';
 import { AboutPage } from './pages/AboutPage';
 import { SubscribePage } from './pages/SubscribePage';
+import { BriefingPage } from './pages/BriefingPage';
 
 function App() {
   return (
@@ -17,7 +18,7 @@ function App() {
           <Header />
           <main className="flex-1">
             <Routes>
-              <Route path="/" element={<DealBoardPage />} />
+              <Route path="/" element={<BriefingPage />} />
               <Route path="/deals" element={<DealBoardPage />} />
               <Route path="/deals/:id" element={<RecordDetailPage />} />
               <Route path="/buyers" element={<BuyersPage />} />

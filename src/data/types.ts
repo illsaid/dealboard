@@ -65,18 +65,35 @@ export interface BriefingIssue {
   id: string;
   date: string;
   issueLabel: string;
+  coverageWindow: string;
   headline: string;
   deck: string;
-  signalThisWeek: string;
-  moneyMoves: string[];
-  mandatesForming: {
-    signalType: string;
-    confidence: Confidence;
-    explanation: string;
-    whyItMatters: string;
-    evidenceUrl: string;
+  readTime: string;
+  substackUrl: string;
+  atAGlance: string[];
+  signalThisWeek: string[];
+  moneyMoves: {
+    headline: string;
+    move: string;
+    read: string;
+    recordMatch?: string;
+    action?: { label: string; description: string; url: string };
+    sources: { name: string; url: string }[];
   }[];
-  legacyCrossovers: string[];
-  buyerToWatch: string;
-  quickCuts: { headline: string; summary: string; sourceUrl: string }[];
+  mandatesForming: {
+    buyer: string;
+    confidence: Confidence;
+    signal: string;
+    whyItMatters: string;
+    evidence: { name: string; url: string }[];
+  }[];
+  buyerToWatch: {
+    name: string;
+    buyerMatch: string;
+    apparentMandate: string;
+    route: string;
+    namedExecutive: string;
+    unknown: string;
+  };
+  quickCuts: { headline: string; summary: string; sourceName: string; sourceUrl: string }[];
 }

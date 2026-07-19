@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, HelpCircle, Lock, ArrowRight } from 'lucide-react';
+import { ArrowLeft, HelpCircle, Lock } from 'lucide-react';
 import { useBuyerById, useRecordsForBuyer } from '../data/useDataService';
 import { pluralize } from '../data/service';
 import { BuyerTypeBadge, FormatBadge, RecordClassBadge } from '../components/Badges';
