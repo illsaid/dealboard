@@ -10,6 +10,12 @@ export function Footer() {
           <div>
             <p className="text-base font-extrabold tracking-tight text-ink-900 font-display">THE PICKUP</p>
             <p className="text-xs text-ink-500 mt-1">The scoreboard for who's buying entertainment now.</p>
+            <a
+              href="mailto:editor@thepickup.co"
+              className="ledger-link inline-block text-xs mt-2"
+            >
+              editor@thepickup.co
+            </a>
           </div>
           <p className="text-xs text-inkred font-medium uppercase tracking-wide">
             {isLive

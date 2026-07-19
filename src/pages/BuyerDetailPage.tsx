@@ -109,6 +109,16 @@ export function BuyerDetailPage() {
           <p className="text-xs text-ink-400 mt-3 pt-3 border-t border-ink-200">
             Last buyer verification: {formatVerifiedDate(buyer.lastVerified)}
           </p>
+          <p className="text-xs text-ink-500 mt-2">
+            Have current route information?{' '}
+            <a
+              href={`mailto:editor@thepickup.co?subject=${encodeURIComponent(`Route update: ${buyer.name}`)}`}
+              className="ledger-link"
+            >
+              Contact the editor
+            </a>
+            .
+          </p>
         </div>
       </section>
 

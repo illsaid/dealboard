@@ -111,6 +111,19 @@ export function AboutPage() {
         </div>
       </section>
 
+      <section className="mb-10 grid grid-cols-1 sm:grid-cols-[8rem_1fr] gap-x-6 gap-y-4 border-t border-ink-200 pt-6">
+        <p className="text-[11px] font-bold text-ink-900 uppercase tracking-[0.14em] pt-0.5">Contact</p>
+        <div className="text-sm text-ink-700 leading-relaxed">
+          <p>
+            Send deal tips, corrections, buyer intelligence, partnership inquiries, or questions to{' '}
+            <a href="mailto:editor@thepickup.co" className="ledger-link font-semibold">
+              editor@thepickup.co
+            </a>
+            .
+          </p>
+        </div>
+      </section>
+
       {/* Red poster CTA block */}
       <section className="bg-signal px-6 py-10 sm:px-10 sm:py-12 text-center">
         <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-display uppercase tracking-tight leading-tight mb-3">
