@@ -77,14 +77,27 @@ function mapDbBuyerToLocal(row: Record<string, unknown>): Buyer {
   };
 }
 
-export function DataProvider({ children }: { children: ReactNode }) {
-  const [records, setRecords] = useState<DealRecord[]>(demoRecords);
-  const [buyers, setBuyers] = useState<Buyer[]>(demoBuyers);
-  const [isLive, setIsLive] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [latestVerifiedDate, setLatestVerifiedDate] = useState<string | null>(null);
+interface DataProviderProps {
+  children: ReactNode;
+  initialRecords?: DealRecord[];
+  initialBuyers?: Buyer[];
+}
+
+export function DataProvider({ children, initialRecords, initialBuyers }: DataProviderProps) {
+  const [records, setRecords] = useState<DealRecord[]>(initialRecords || demoRecords);
+  const [buyers, setBuyers] = useState<Buyer[]>(initialBuyers || demoBuyers);
+  const [isLive, setIsLive] = useState(!!initialRecords);
+  const [loading, setLoading] = useState(!initialRecords);
+  const [latestVerifiedDate, setLatestVerifiedDate] = useState<string | null>(() => {
+    if (initialRecords) {
+      const dates = initialRecords.map(r => r.lastVerified).filter(Boolean).sort().reverse();
+      return dates[0] || null;
+    }
+    return null;
+  });
 
   useEffect(() => {
+    if (initialRecords) return;
     if (!supabase) {
       setLoading(false);
       return;

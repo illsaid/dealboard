@@ -6,6 +6,7 @@ import { useData } from '../data/DataProvider';
 import { pluralize } from '../data/service';
 import { RecordClassBadge, StrategicTagBadge, FormatBadge, EvidenceBadge, ConfidenceBadge, ActionRouteBadge } from '../components/Badges';
 import { PrototypeNotice } from '../components/PrototypeNotice';
+import { SEO } from '../components/SEO';
 import type { RecordType, Format, EvidenceTier, Confidence, Territory, ActionRouteStatus, DealRecord } from '../data/types';
 
 type ViewMode = 'cards' | 'table';
@@ -94,6 +95,7 @@ export function DealBoardPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+      <SEO title="Deal Board | The Pickup" description="Searchable intelligence on who's buying entertainment and what they're acquiring. Confirmed deals, developing signals, and buyer mandates." />
       {!isLive && <PrototypeNotice />}
 
       <header className="mt-6 mb-6">

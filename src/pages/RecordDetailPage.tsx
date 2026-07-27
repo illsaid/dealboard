@@ -3,6 +3,7 @@ import { ArrowLeft, ExternalLink, CheckCircle, AlertTriangle, Lock } from 'lucid
 import { useAccessibleRecordById, useBuyerById, useBuyers } from '../data/useDataService';
 import { useData } from '../data/DataProvider';
 import { RecordTypeBadge, RecordClassBadge, StrategicTagBadge, FormatBadge, EvidenceBadge, ConfidenceBadge, ActionRouteBadge } from '../components/Badges';
+import { SEO } from '../components/SEO';
 
 export function RecordDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -41,6 +42,7 @@ export function RecordDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+      <SEO title={`${record.headline} | The Pickup`} description={record.summary} />
       <Link to="/deals" className="inline-flex items-center gap-1 text-xs text-ink-500 hover:text-inkred mb-6">
         <ArrowLeft size={14} /> Back to Deal Board
       </Link>

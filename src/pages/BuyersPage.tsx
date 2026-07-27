@@ -6,6 +6,7 @@ import { useData } from '../data/DataProvider';
 import { pluralize } from '../data/service';
 import { BuyerTypeBadge, FormatBadge, buyerTypeLabels } from '../components/Badges';
 import { PrototypeNotice } from '../components/PrototypeNotice';
+import { SEO } from '../components/SEO';
 import type { BuyerType, Confidence, Buyer } from '../data/types';
 
 function formatVerifiedDate(dateStr: string): string {
@@ -101,6 +102,7 @@ export function BuyersPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+      <SEO title="Buyer Directory | The Pickup" description="Who is actively writing checks for entertainment content. Buyer profiles, mandates, confidence ratings, and linked deal records." />
       {!isLive && <PrototypeNotice />}
 
       <header className="mt-6 mb-6">

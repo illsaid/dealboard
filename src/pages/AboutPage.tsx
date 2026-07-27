@@ -1,6 +1,9 @@
+import { SEO } from '../components/SEO';
+
 export function AboutPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+      <SEO title="About The Pickup | The Pickup" description="How The Pickup tracks emerging buyers and new entertainment financing. Evidence classes, editorial standards, and who it's for." />
       <header className="mb-10">
         <p className="kicker mb-2">About</p>
         <h1 className="text-3xl font-extrabold text-ink-900 font-display">About The Pickup</h1>
@@ -108,19 +111,6 @@ export function AboutPage() {
               <p className="text-xs text-ink-600 leading-relaxed">A material claim confirmed directly by a buyer or source. Identity remains confidential unless disclosure is authorized.</p>
             </div>
           </div>
-        </div>
-      </section>
-
-      <section className="mb-10 grid grid-cols-1 sm:grid-cols-[8rem_1fr] gap-x-6 gap-y-4 border-t border-ink-200 pt-6">
-        <p className="text-[11px] font-bold text-ink-900 uppercase tracking-[0.14em] pt-0.5">Contact</p>
-        <div className="text-sm text-ink-700 leading-relaxed">
-          <p>
-            Send deal tips, corrections, buyer intelligence, partnership inquiries, or questions to{' '}
-            <a href="mailto:editor@thepickup.co" className="ledger-link font-semibold">
-              editor@thepickup.co
-            </a>
-            .
-          </p>
         </div>
       </section>
 

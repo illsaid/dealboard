@@ -1,9 +1,10 @@
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, HelpCircle, Lock } from 'lucide-react';
+import { ArrowLeft, HelpCircle, Lock, ArrowRight } from 'lucide-react';
 import { useBuyerById, useRecordsForBuyer } from '../data/useDataService';
 import { pluralize } from '../data/service';
 import { BuyerTypeBadge, FormatBadge, RecordClassBadge } from '../components/Badges';
 import type { Confidence } from '../data/types';
+import { SEO } from '../components/SEO';
 
 function formatVerifiedDate(dateStr: string): string {
   if (!dateStr) return '\u2014';
@@ -58,6 +59,7 @@ export function BuyerDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+      <SEO title={`${buyer.name}: Mandate, Activity & Route | The Pickup`} description={buyer.currentMandate || buyer.description} />
       <Link to="/buyers" className="inline-flex items-center gap-1 text-xs text-ink-500 hover:text-inkred mb-6">
         <ArrowLeft size={14} /> Back to Buyer Directory
       </Link>
@@ -108,16 +110,6 @@ export function BuyerDetailPage() {
           </div>
           <p className="text-xs text-ink-400 mt-3 pt-3 border-t border-ink-200">
             Last buyer verification: {formatVerifiedDate(buyer.lastVerified)}
-          </p>
-          <p className="text-xs text-ink-500 mt-2">
-            Have current route information?{' '}
-            <a
-              href={`mailto:editor@thepickup.co?subject=${encodeURIComponent(`Route update: ${buyer.name}`)}`}
-              className="ledger-link"
-            >
-              Contact the editor
-            </a>
-            .
           </p>
         </div>
       </section>
