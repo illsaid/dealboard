@@ -11,6 +11,24 @@ const corsHeaders = {
 const PUBLIC_SYNC_TRIGGER = "publication-v1";
 const PUBLIC_SYNC_COOLDOWN_MINUTES = 5;
 
+// After a successful production sync, ask Cloudflare Pages to rebuild so the
+// static per-route HTML (titles, canonicals, OG tags, visible content) and
+// sitemap.xml are regenerated from the freshly published Supabase data.
+// Without this, a newly published record URL has no static file yet and the
+// Cloudflare SPA fallback serves the generic Deal Board shell to crawlers.
+async function triggerDeploy(): Promise<{ triggered: boolean; status?: number; error?: string }> {
+  const hookUrl = Deno.env.get("CLOUDFLARE_DEPLOY_HOOK_URL");
+  if (!hookUrl) {
+    return { triggered: false, error: "CLOUDFLARE_DEPLOY_HOOK_URL not configured" };
+  }
+  try {
+    const res = await fetch(hookUrl, { method: "POST" });
+    return { triggered: res.ok, status: res.status, error: res.ok ? undefined : `Deploy hook returned ${res.status}` };
+  } catch (e) {
+    return { triggered: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 interface AirtableRecord {
   id: string;
   fields: Record<string, unknown>;
@@ -796,6 +814,17 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // ─── Trigger Cloudflare Pages rebuild ───────────────────────────────────
+    // Only when the publication set actually changed, so a new record URL gets
+    // its own static HTML + sitemap entry instead of falling back to the SPA
+    // shell. A missing/failing hook is logged but never fails the sync.
+    const publicationChanged =
+      buyersUpserted > 0 || recordsUpserted > 0 ||
+      buyersUnpublished > 0 || recordsUnpublished > 0;
+    const deploy = publicationChanged
+      ? await triggerDeploy()
+      : { triggered: false, error: "No publication changes; deploy skipped" };
+
     // ─── Log sync run ────────────────────────────────────────────────────────
     await supabase.from("sync_runs").insert({
       source: syncSource,
@@ -820,6 +849,9 @@ Deno.serve(async (req: Request) => {
         records_upserted: recordsUpserted,
         buyers_unpublished: buyersUnpublished,
         records_unpublished: recordsUnpublished,
+        deploy_triggered: deploy.triggered,
+        deploy_status: deploy.status ?? null,
+        deploy_error: deploy.error ?? null,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
