@@ -125,7 +125,7 @@ export async function fetchPublishedData() {
         readTime: '',
         substackUrl: 'https://thepickupco.substack.com/',
         atAGlance: [],
-        signalThisWeek: (b.signal_this_week || '').split('\n\n').filter(Boolean),
+        signalThisWeek: (b.signal_this_week as string) || '',
         moneyMoves: resolveRecords(moneyMoveIds),
         legacyCrossovers: resolveRecords(legacyCrossoverIds),
         mandatesForming: (mandatesRes.data || []).map((m: Record<string, unknown>) => ({

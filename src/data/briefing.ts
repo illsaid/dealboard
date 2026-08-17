@@ -16,11 +16,7 @@ export const latestIssue: BriefingIssue = {
     'Beast Industries is building both a dedicated full-scale vertical-production team and Vyro, a paid creator-distribution platform for outside brands.',
     'Albertsons Media Collective, Procter & Gamble, Minivela and Brilla Media made a 22-episode microdrama for retail, e-commerce and social distribution.',
   ],
-  signalThisWeek: [
-    'Vertical is no longer one app-category business. It is being used as a subscription destination, a paid-unlock product, a public-broadcaster commissioning lane, an in-house production capability and a retail-media format.',
-    'The screen shape is common. The underlying buyer economics are not. A producer pitching a paid-unlock app is selling a conversion engine; a broadcaster is buying against an audience remit; a retailer is testing whether entertainment can create measurable commerce attention.',
-    'The commissioner lane is likely the most durable model for an independent producer, though it is narrow by design. The wildcard is retail media: it already has brands, first-party data and owned screens, but still needs a repeatable entertainment format that proves its value.',
-  ],
+  signalThisWeek: '<p>Vertical is no longer one app-category business. It is being used as a subscription destination, a paid-unlock product, a public-broadcaster commissioning lane, an in-house production capability and a retail-media format.</p><p>The screen shape is common. The underlying buyer economics are not. A producer pitching a paid-unlock app is selling a conversion engine; a broadcaster is buying against an audience remit; a retailer is testing whether entertainment can create measurable commerce attention.</p><p>The commissioner lane is likely the most durable model for an independent producer, though it is narrow by design. The wildcard is retail media: it already has brands, first-party data and owned screens, but still needs a repeatable entertainment format that proves its value.</p>',
   moneyMoves: [
     {
       headline: 'vertTV launches a subscription platform, 200-plus-title vault and original slate',

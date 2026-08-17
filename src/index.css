@@ -46,4 +46,19 @@
   .ledger-link {
     @apply text-inkred font-semibold underline-offset-2 hover:underline;
   }
+
+  /* TipTap rich-text editor */
+  .prose-editor {
+    @apply text-sm text-ink-900 leading-relaxed;
+  }
+  .prose-editor p {
+    @apply mb-2 last:mb-0;
+  }
+  .prose-editor a {
+    @apply text-inkred underline underline-offset-2;
+  }
+  .prose-editor p.is-editor-empty:first-child::before {
+    @apply text-ink-400 pointer-events-none float-left h-0;
+    content: attr(data-placeholder);
+  }
 }

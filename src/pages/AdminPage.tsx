@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   LogOut, Plus, ChevronUp, ChevronDown, Trash2, Save, Send, Loader2, AlertCircle, CheckCircle2,
 } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { supabase as dataSupabase } from '../data/supabase';
 import { supabase as libSupabase } from '../lib/supabase';
+import { RichTextEditor } from '../components/RichTextEditor';
 
 const supabase = dataSupabase || libSupabase;
 
@@ -77,12 +79,13 @@ function moveDown<T>(arr: T[], i: number): T[] {
 // Feedback banner
 // ---------------------------------------------------------------------------
 
-function FieldHint() {
-  return (
-    <p className="text-[10px] text-ink-400 mt-1">
-      Use [link text](https://...) to add a hyperlink. Pasting a link from Word or Google Docs will not carry it over — only the visible text.
-    </p>
-  );
+const SANITIZE_CONFIG = {
+  ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'a'],
+  ALLOWED_ATTR: ['href', 'target', 'rel'],
+};
+
+function sanitizeHtml(html: string): string {
+  return DOMPurify.sanitize(html, SANITIZE_CONFIG);
 }
 
 function Banner({ type, message }: { type: 'success' | 'error'; message: string }) {
@@ -318,8 +321,8 @@ export function AdminPage() {
         date: formDate,
         issue_label: formIssueLabel,
         headline: formHeadline,
-        deck: formDeck,
-        signal_this_week: formSignal,
+        deck: sanitizeHtml(formDeck),
+        signal_this_week: sanitizeHtml(formSignal),
         money_moves: formMoneyMoves,
         legacy_crossovers: formLegacyCrossovers,
         buyer_to_watch: formBuyerToWatch,
@@ -334,7 +337,13 @@ export function AdminPage() {
       const validMandates = formMandates.filter(m => m.signal_type.trim());
       if (validMandates.length > 0) {
         const { error: mErr } = await supabase.from('briefing_mandates').insert(
-          validMandates.map((m, i) => ({ ...m, briefing_id: formId, position: i })),
+          validMandates.map((m, i) => ({
+            ...m,
+            explanation: sanitizeHtml(m.explanation),
+            why_it_matters: sanitizeHtml(m.why_it_matters),
+            briefing_id: formId,
+            position: i,
+          })),
         );
         if (mErr) throw mErr;
       }
@@ -344,7 +353,12 @@ export function AdminPage() {
       const validCuts = formQuickCuts.filter(q => q.headline.trim());
       if (validCuts.length > 0) {
         const { error: qErr } = await supabase.from('briefing_quick_cuts').insert(
-          validCuts.map((q, i) => ({ ...q, briefing_id: formId, position: i })),
+          validCuts.map((q, i) => ({
+            ...q,
+            summary: sanitizeHtml(q.summary),
+            briefing_id: formId,
+            position: i,
+          })),
         );
         if (qErr) throw qErr;
       }
@@ -475,18 +489,13 @@ export function AdminPage() {
           {/* Deck */}
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-[0.12em] text-ink-700 mb-1">Deck</label>
-            <input type="text" value={formDeck} onChange={e => setFormDeck(e.target.value)}
-              className="w-full border border-ink-300 bg-white px-3 py-2 text-sm text-ink-900 focus:outline-none focus:border-inkred" />
-            <FieldHint />
+            <RichTextEditor value={formDeck} onChange={setFormDeck} rows={2} />
           </div>
 
           {/* Signal this week */}
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-[0.12em] text-ink-700 mb-1">Signal This Week</label>
-            <textarea value={formSignal} onChange={e => setFormSignal(e.target.value)} rows={5}
-              placeholder="Separate paragraphs with double newlines."
-              className="w-full border border-ink-300 bg-white px-3 py-2 text-sm text-ink-900 leading-relaxed focus:outline-none focus:border-inkred" />
-            <FieldHint />
+            <RichTextEditor value={formSignal} onChange={setFormSignal} rows={5} />
           </div>
 
           {/* ====== Money Moves ====== */}
@@ -610,17 +619,11 @@ export function AdminPage() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-ink-600 mb-1">Explanation</label>
-                  <textarea value={m.explanation} rows={2}
-                    onChange={e => { const next = [...formMandates]; next[i] = { ...m, explanation: e.target.value }; setFormMandates(next); }}
-                    className="w-full border border-ink-300 bg-white px-3 py-1.5 text-sm text-ink-900 leading-relaxed focus:outline-none focus:border-inkred" />
-                  <FieldHint />
+                  <RichTextEditor value={m.explanation} onChange={val => { const next = [...formMandates]; next[i] = { ...m, explanation: val }; setFormMandates(next); }} rows={2} />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-ink-600 mb-1">Why It Matters</label>
-                  <textarea value={m.why_it_matters} rows={2}
-                    onChange={e => { const next = [...formMandates]; next[i] = { ...m, why_it_matters: e.target.value }; setFormMandates(next); }}
-                    className="w-full border border-ink-300 bg-white px-3 py-1.5 text-sm text-ink-900 leading-relaxed focus:outline-none focus:border-inkred" />
-                  <FieldHint />
+                  <RichTextEditor value={m.why_it_matters} onChange={val => { const next = [...formMandates]; next[i] = { ...m, why_it_matters: val }; setFormMandates(next); }} rows={2} />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-ink-600 mb-1">Evidence URL</label>
@@ -660,10 +663,7 @@ export function AdminPage() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-ink-600 mb-1">Summary</label>
-                  <textarea value={q.summary} rows={2}
-                    onChange={e => { const next = [...formQuickCuts]; next[i] = { ...q, summary: e.target.value }; setFormQuickCuts(next); }}
-                    className="w-full border border-ink-300 bg-white px-3 py-1.5 text-sm text-ink-900 leading-relaxed focus:outline-none focus:border-inkred" />
-                  <FieldHint />
+                  <RichTextEditor value={q.summary} onChange={val => { const next = [...formQuickCuts]; next[i] = { ...q, summary: val }; setFormQuickCuts(next); }} rows={2} />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-ink-600 mb-1">Source URL</label>

@@ -71,7 +71,7 @@ export interface BriefingIssue {
   readTime: string;
   substackUrl: string;
   atAGlance: string[];
-  signalThisWeek: string[];
+  signalThisWeek: string;
   moneyMoves: {
     headline: string;
     move: string;

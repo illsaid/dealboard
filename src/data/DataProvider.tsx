@@ -68,7 +68,7 @@ function resolveBriefing(
     readTime: '',
     substackUrl: 'https://thepickupco.substack.com/',
     atAGlance: [],
-    signalThisWeek: ((dbRow.signal_this_week as string) || '').split('\n\n').filter(Boolean),
+    signalThisWeek: (dbRow.signal_this_week as string) || '',
     moneyMoves: resolveRecordMoves(moneyMoveIds),
     legacyCrossovers: resolveRecordMoves(legacyCrossoverIds),
     mandatesForming: mandates.map(m => ({
