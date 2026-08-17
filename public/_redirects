@@ -1,12 +1,2 @@
-# Collapse trailing-slash duplicates to the canonical no-slash form.
-# Cloudflare Pages matches top-to-bottom, first match wins.
-/deals/ /deals 301
-/deals/:slug/ /deals/:slug 301
-/buyers/ /buyers 301
-/buyers/:slug/ /buyers/:slug 301
-/about/ /about 301
-/subscribe/ /subscribe 301
-/admin/ /admin 301
-
 # SPA fallback — serves the React app for any route without a static file.
 /* /index.html 200
