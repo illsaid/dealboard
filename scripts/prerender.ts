@@ -185,9 +185,6 @@ ${sitemapEntries.join('\n')}
   fs.writeFileSync(path.join(DIST, 'sitemap.xml'), sitemap);
   console.log(`[prerender] Generated sitemap.xml with ${indexableRoutes.length} URLs`);
 
-  // Write _redirects for Cloudflare Pages SPA fallback (only for non-prerendered paths)
-  fs.writeFileSync(path.join(DIST, '_redirects'), '/* /index.html 200\n');
-
   // Clean up SSR build
   fs.rmSync(path.join(ROOT, 'dist-ssr'), { recursive: true, force: true });
 
