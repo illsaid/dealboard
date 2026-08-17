@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { EmailCapture } from '../components/EmailCapture';
 import { ConfidenceBadge } from '../components/Badges';
 import { SEO } from '../components/SEO';
+import { RichText } from '../components/RichText';
 import { useData } from '../data/DataProvider';
 
 export function BriefingPage() {
@@ -41,7 +42,7 @@ export function BriefingPage() {
           {issue.headline}
         </h1>
         <p className="max-w-2xl text-base sm:text-lg text-ink-600 leading-relaxed mt-5">
-          {issue.deck}
+          <RichText text={issue.deck} />
         </p>
         <div className="flex flex-wrap items-center gap-5 mt-6">
           <a
@@ -81,7 +82,7 @@ export function BriefingPage() {
           <div className="mt-5 border-l-2 border-signal pl-5 space-y-4">
             {issue.signalThisWeek.map((paragraph) => (
               <p key={paragraph} className="text-sm sm:text-[15px] text-ink-700 leading-7">
-                {paragraph}
+                <RichText text={paragraph} />
               </p>
             ))}
           </div>
@@ -264,7 +265,7 @@ export function BriefingPage() {
             {issue.quickCuts.map((item) => (
               <article key={item.headline} className="py-5">
                 <h3 className="text-sm font-bold text-ink-900">{item.headline}</h3>
-                <p className="text-sm text-ink-600 leading-relaxed mt-1.5">{item.summary}</p>
+                <p className="text-sm text-ink-600 leading-relaxed mt-1.5"><RichText text={item.summary} /></p>
                 <a
                   href={item.sourceUrl}
                   target="_blank"
@@ -303,7 +304,7 @@ function LabeledParagraph({ label, text }: { label: string; text: string }) {
   return (
     <div className="mt-5">
       <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-inkred">{label}</p>
-      <p className="text-sm sm:text-[15px] text-ink-700 leading-7 mt-1.5">{text}</p>
+      <p className="text-sm sm:text-[15px] text-ink-700 leading-7 mt-1.5"><RichText text={text} /></p>
     </div>
   );
 }

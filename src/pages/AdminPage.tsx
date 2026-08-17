@@ -77,6 +77,14 @@ function moveDown<T>(arr: T[], i: number): T[] {
 // Feedback banner
 // ---------------------------------------------------------------------------
 
+function FieldHint() {
+  return (
+    <p className="text-[10px] text-ink-400 mt-1">
+      Use [link text](https://...) to add a hyperlink. Pasting a link from Word or Google Docs will not carry it over — only the visible text.
+    </p>
+  );
+}
+
 function Banner({ type, message }: { type: 'success' | 'error'; message: string }) {
   return (
     <div className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border ${
@@ -469,6 +477,7 @@ export function AdminPage() {
             <label className="block text-[11px] font-bold uppercase tracking-[0.12em] text-ink-700 mb-1">Deck</label>
             <input type="text" value={formDeck} onChange={e => setFormDeck(e.target.value)}
               className="w-full border border-ink-300 bg-white px-3 py-2 text-sm text-ink-900 focus:outline-none focus:border-inkred" />
+            <FieldHint />
           </div>
 
           {/* Signal this week */}
@@ -477,6 +486,7 @@ export function AdminPage() {
             <textarea value={formSignal} onChange={e => setFormSignal(e.target.value)} rows={5}
               placeholder="Separate paragraphs with double newlines."
               className="w-full border border-ink-300 bg-white px-3 py-2 text-sm text-ink-900 leading-relaxed focus:outline-none focus:border-inkred" />
+            <FieldHint />
           </div>
 
           {/* ====== Money Moves ====== */}
@@ -603,12 +613,14 @@ export function AdminPage() {
                   <textarea value={m.explanation} rows={2}
                     onChange={e => { const next = [...formMandates]; next[i] = { ...m, explanation: e.target.value }; setFormMandates(next); }}
                     className="w-full border border-ink-300 bg-white px-3 py-1.5 text-sm text-ink-900 leading-relaxed focus:outline-none focus:border-inkred" />
+                  <FieldHint />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-ink-600 mb-1">Why It Matters</label>
                   <textarea value={m.why_it_matters} rows={2}
                     onChange={e => { const next = [...formMandates]; next[i] = { ...m, why_it_matters: e.target.value }; setFormMandates(next); }}
                     className="w-full border border-ink-300 bg-white px-3 py-1.5 text-sm text-ink-900 leading-relaxed focus:outline-none focus:border-inkred" />
+                  <FieldHint />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-ink-600 mb-1">Evidence URL</label>
@@ -651,6 +663,7 @@ export function AdminPage() {
                   <textarea value={q.summary} rows={2}
                     onChange={e => { const next = [...formQuickCuts]; next[i] = { ...q, summary: e.target.value }; setFormQuickCuts(next); }}
                     className="w-full border border-ink-300 bg-white px-3 py-1.5 text-sm text-ink-900 leading-relaxed focus:outline-none focus:border-inkred" />
+                  <FieldHint />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-ink-600 mb-1">Source URL</label>
