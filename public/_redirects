@@ -6,6 +6,7 @@
 /buyers/:slug/ /buyers/:slug 301
 /about/ /about 301
 /subscribe/ /subscribe 301
+/admin/ /admin 301
 
 # SPA fallback — serves the React app for any route without a static file.
 /* /index.html 200

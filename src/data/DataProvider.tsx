@@ -1,12 +1,14 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
-import type { DealRecord, Buyer } from './types';
+import type { DealRecord, Buyer, BriefingIssue } from './types';
 import { records as demoRecords } from './records';
 import { buyers as demoBuyers } from './buyers';
+import { latestIssue as demoBriefing } from './briefing';
 
 interface DataContextValue {
   records: DealRecord[];
   buyers: Buyer[];
+  briefing: BriefingIssue;
   isLive: boolean;
   loading: boolean;
   latestVerifiedDate: string | null;
@@ -15,6 +17,7 @@ interface DataContextValue {
 const DataContext = createContext<DataContextValue>({
   records: demoRecords,
   buyers: demoBuyers,
+  briefing: demoBriefing,
   isLive: false,
   loading: true,
   latestVerifiedDate: null,
@@ -77,15 +80,83 @@ function mapDbBuyerToLocal(row: Record<string, unknown>): Buyer {
   };
 }
 
+function resolveBriefing(
+  dbRow: Record<string, unknown>,
+  mandates: Record<string, unknown>[],
+  quickCuts: Record<string, unknown>[],
+  records: DealRecord[],
+  buyers: Buyer[],
+): BriefingIssue {
+  const moneyMoveIds = (dbRow.money_moves as string[]) || [];
+  const legacyCrossoverIds = (dbRow.legacy_crossovers as string[]) || [];
+  const buyerToWatchId = dbRow.buyer_to_watch as string;
+
+  const resolveRecordMoves = (ids: string[]) =>
+    ids
+      .map(id => records.find(r => r.id === id))
+      .filter((r): r is DealRecord => !!r)
+      .map(r => ({
+        headline: r.headline,
+        move: r.summary,
+        read: r.whyItMatters || r.interpretation,
+        recordMatch: r.id,
+        sources: r.sources.map(s => ({ name: s.name, url: s.url })),
+      }));
+
+  const watchBuyer = buyers.find(b => b.id === buyerToWatchId);
+
+  return {
+    id: dbRow.id as string,
+    date: dbRow.date as string,
+    issueLabel: dbRow.issue_label as string,
+    coverageWindow: '',
+    headline: dbRow.headline as string,
+    deck: (dbRow.deck as string) || '',
+    readTime: '',
+    substackUrl: 'https://thepickupco.substack.com/',
+    atAGlance: [],
+    signalThisWeek: ((dbRow.signal_this_week as string) || '').split('\n\n').filter(Boolean),
+    moneyMoves: resolveRecordMoves(moneyMoveIds),
+    legacyCrossovers: resolveRecordMoves(legacyCrossoverIds),
+    mandatesForming: mandates.map(m => ({
+      buyer: m.signal_type as string,
+      confidence: (m.confidence as BriefingIssue['mandatesForming'][0]['confidence']),
+      signal: m.explanation as string,
+      whyItMatters: (m.why_it_matters as string) || '',
+      evidence: (m.evidence_url as string)
+        ? [{ name: 'Source', url: m.evidence_url as string }]
+        : [],
+    })),
+    buyerToWatch: watchBuyer
+      ? {
+          name: watchBuyer.name,
+          buyerMatch: watchBuyer.id,
+          apparentMandate: watchBuyer.currentMandate,
+          route: watchBuyer.contactRoute || 'No confirmed public route.',
+          namedExecutive: '',
+          unknown: watchBuyer.openQuestions.join(' '),
+        }
+      : demoBriefing.buyerToWatch,
+    quickCuts: quickCuts.map(qc => ({
+      headline: qc.headline as string,
+      summary: (qc.summary as string) || '',
+      sourceName: 'Source',
+      sourceUrl: (qc.source_url as string) || '',
+    })),
+  };
+}
+
 interface DataProviderProps {
   children: ReactNode;
   initialRecords?: DealRecord[];
   initialBuyers?: Buyer[];
+  initialBriefing?: BriefingIssue;
 }
 
-export function DataProvider({ children, initialRecords, initialBuyers }: DataProviderProps) {
+export function DataProvider({ children, initialRecords, initialBuyers, initialBriefing }: DataProviderProps) {
   const [records, setRecords] = useState<DealRecord[]>(initialRecords || demoRecords);
   const [buyers, setBuyers] = useState<Buyer[]>(initialBuyers || demoBuyers);
+  const [briefing, setBriefing] = useState<BriefingIssue>(initialBriefing || demoBriefing);
   const [isLive, setIsLive] = useState(!!initialRecords);
   const [loading, setLoading] = useState(!initialRecords);
   const [latestVerifiedDate, setLatestVerifiedDate] = useState<string | null>(() => {
@@ -128,6 +199,34 @@ export function DataProvider({ children, initialRecords, initialBuyers }: DataPr
             .sort()
             .reverse();
           setLatestVerifiedDate(dates[0] || null);
+
+          // Fetch latest published briefing
+          const briefingRes = await supabase!
+            .from('briefings')
+            .select('*')
+            .eq('is_published', true)
+            .order('date', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (!cancelled && briefingRes.data) {
+            const bId = briefingRes.data.id;
+            const [mandatesRes, quickCutsRes] = await Promise.all([
+              supabase!.from('briefing_mandates').select('*').eq('briefing_id', bId).order('position'),
+              supabase!.from('briefing_quick_cuts').select('*').eq('briefing_id', bId).order('position'),
+            ]);
+
+            if (!cancelled) {
+              const resolved = resolveBriefing(
+                briefingRes.data,
+                mandatesRes.data || [],
+                quickCutsRes.data || [],
+                liveRecords,
+                liveBuyers,
+              );
+              setBriefing(resolved);
+            }
+          }
         }
       } catch {
         // Fallback to demo data silently
@@ -141,7 +240,7 @@ export function DataProvider({ children, initialRecords, initialBuyers }: DataPr
   }, []);
 
   return (
-    <DataContext.Provider value={{ records, buyers, isLive, loading, latestVerifiedDate }}>
+    <DataContext.Provider value={{ records, buyers, briefing, isLive, loading, latestVerifiedDate }}>
       {children}
     </DataContext.Provider>
   );

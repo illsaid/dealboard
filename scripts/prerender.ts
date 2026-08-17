@@ -64,7 +64,7 @@ function escapeHtml(str: string): string {
 
 async function main() {
   console.log('[prerender] Fetching published data...');
-  const { records, buyers } = await fetchPublishedData();
+  const { records, buyers, briefing } = await fetchPublishedData();
 
   // Build the SSR bundle
   console.log('[prerender] Building SSR bundle...');
@@ -87,12 +87,20 @@ async function main() {
   // Read the client HTML template
   const template = fs.readFileSync(path.join(DIST, 'index.html'), 'utf-8');
 
-  // Build route list
+  // Homepage title/description come from the current published briefing
+  const homepageTitle = briefing.headline
+    ? `${briefing.headline} | The Pickup`
+    : 'The Pickup \u2014 Who\u2019s Buying Entertainment Now';
+  const homepageDescription = briefing.deck
+    || 'The weekly intelligence briefing on entertainment acquisitions and buyer mandates.';
+
+  // Build route list — /admin is deliberately excluded
   const routes: RouteEntry[] = [
     {
       path: '/',
-      title: 'The Pickup \u2014 Who\u2019s Buying Entertainment Now',
-      description: 'The scoreboard for who\u2019s buying entertainment now. Confirmed deals, developing signals, and buyer mandates tracked with evidence.',
+      title: homepageTitle,
+      description: homepageDescription,
+      lastmod: briefing.date || undefined,
     },
     {
       path: '/deals',
@@ -141,11 +149,11 @@ async function main() {
   console.log(`[prerender] Rendering ${routes.length} routes...`);
 
   for (const route of routes) {
-    const appHtml = render(route.path, { records, buyers });
+    const appHtml = render(route.path, { records, buyers, briefing });
     const metaTags = buildMetaTags(route);
 
     // Replace the default title with route-specific meta tags
-    let html = template
+    const html = template
       .replace(
         '<title>The Pickup — Who\'s Buying Entertainment Now</title>',
         metaTags

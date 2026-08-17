@@ -80,6 +80,13 @@ export interface BriefingIssue {
     action?: { label: string; description: string; url: string };
     sources: { name: string; url: string }[];
   }[];
+  legacyCrossovers?: {
+    headline: string;
+    move: string;
+    read: string;
+    recordMatch?: string;
+    sources: { name: string; url: string }[];
+  }[];
   mandatesForming: {
     buyer: string;
     confidence: Confidence;

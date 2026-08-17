@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { records as demoRecords } from '../src/data/records.ts';
 import { buyers as demoBuyers } from '../src/data/buyers.ts';
+import { latestIssue as demoBriefing } from '../src/data/briefing.ts';
+import type { BriefingIssue } from '../src/data/types.ts';
 
 export async function fetchPublishedData() {
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
@@ -8,7 +10,7 @@ export async function fetchPublishedData() {
 
   if (!supabaseUrl || !supabaseAnonKey) {
     console.log('[prerender] No Supabase credentials — using demo data');
-    return { records: demoRecords, buyers: demoBuyers, source: 'demo' as const };
+    return { records: demoRecords, buyers: demoBuyers, briefing: demoBriefing, source: 'demo' as const };
   }
 
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -34,7 +36,7 @@ export async function fetchPublishedData() {
 
     if (!recordsResult.data?.length || !buyersResult.data?.length) {
       console.log('[prerender] Supabase returned empty published data — using demo data');
-      return { records: demoRecords, buyers: demoBuyers, source: 'demo' as const };
+      return { records: demoRecords, buyers: demoBuyers, briefing: demoBriefing, source: 'demo' as const };
     }
 
     const records = recordsResult.data.map((row) => ({
@@ -43,8 +45,8 @@ export async function fetchPublishedData() {
       buyer: row.buyer,
       buyerId: row.buyer_id,
       secondaryBuyerIds: (row.record_buyers ?? [])
-        .filter((b) => !b.is_primary && b.buyer_id !== row.buyer_id)
-        .map((b) => b.buyer_id),
+        .filter((b: { is_primary: boolean; buyer_id: string }) => !b.is_primary && b.buyer_id !== row.buyer_id)
+        .map((b: { buyer_id: string }) => b.buyer_id),
       headline: row.headline,
       recordType: row.record_type,
       recordClass: row.record_class,
@@ -83,10 +85,80 @@ export async function fetchPublishedData() {
       lastVerified: row.last_verified,
     }));
 
+    // Fetch latest published briefing
+    let briefing: BriefingIssue = demoBriefing;
+    const briefingRes = await supabase
+      .from('briefings')
+      .select('*')
+      .eq('is_published', true)
+      .order('date', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (briefingRes.data) {
+      const b = briefingRes.data;
+      const [mandatesRes, quickCutsRes] = await Promise.all([
+        supabase.from('briefing_mandates').select('*').eq('briefing_id', b.id).order('position'),
+        supabase.from('briefing_quick_cuts').select('*').eq('briefing_id', b.id).order('position'),
+      ]);
+
+      const moneyMoveIds: string[] = b.money_moves || [];
+      const legacyCrossoverIds: string[] = b.legacy_crossovers || [];
+      const resolveRecords = (ids: string[]) =>
+        ids.map(id => records.find(r => r.id === id)).filter(Boolean).map(r => ({
+          headline: r!.headline,
+          move: r!.summary,
+          read: r!.whyItMatters || r!.interpretation,
+          recordMatch: r!.id,
+          sources: (r!.sources || []).map((s: { name: string; url: string }) => ({ name: s.name, url: s.url })),
+        }));
+
+      const watchBuyer = buyers.find(bu => bu.id === b.buyer_to_watch);
+
+      briefing = {
+        id: b.id,
+        date: b.date,
+        issueLabel: b.issue_label,
+        coverageWindow: '',
+        headline: b.headline,
+        deck: b.deck || '',
+        readTime: '',
+        substackUrl: 'https://thepickupco.substack.com/',
+        atAGlance: [],
+        signalThisWeek: (b.signal_this_week || '').split('\n\n').filter(Boolean),
+        moneyMoves: resolveRecords(moneyMoveIds),
+        legacyCrossovers: resolveRecords(legacyCrossoverIds),
+        mandatesForming: (mandatesRes.data || []).map((m: Record<string, unknown>) => ({
+          buyer: m.signal_type as string,
+          confidence: m.confidence as 'high' | 'medium' | 'low',
+          signal: m.explanation as string,
+          whyItMatters: (m.why_it_matters as string) || '',
+          evidence: (m.evidence_url as string) ? [{ name: 'Source', url: m.evidence_url as string }] : [],
+        })),
+        buyerToWatch: watchBuyer
+          ? {
+              name: watchBuyer.name,
+              buyerMatch: watchBuyer.id,
+              apparentMandate: watchBuyer.currentMandate,
+              route: watchBuyer.contactRoute || 'No confirmed public route.',
+              namedExecutive: '',
+              unknown: (watchBuyer.openQuestions || []).join(' '),
+            }
+          : demoBriefing.buyerToWatch,
+        quickCuts: (quickCutsRes.data || []).map((qc: Record<string, unknown>) => ({
+          headline: qc.headline as string,
+          summary: (qc.summary as string) || '',
+          sourceName: 'Source',
+          sourceUrl: (qc.source_url as string) || '',
+        })),
+      };
+      console.log(`[prerender] Loaded published briefing: ${briefing.id}`);
+    }
+
     console.log(`[prerender] Loaded ${records.length} records, ${buyers.length} buyers from Supabase`);
-    return { records, buyers, source: 'supabase' as const };
+    return { records, buyers, briefing, source: 'supabase' as const };
   } catch (error) {
     console.warn('[prerender] Supabase fetch failed — using demo data:', error);
-    return { records: demoRecords, buyers: demoBuyers, source: 'demo' as const };
+    return { records: demoRecords, buyers: demoBuyers, briefing: demoBriefing, source: 'demo' as const };
   }
 }
