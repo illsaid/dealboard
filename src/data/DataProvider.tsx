@@ -4,6 +4,12 @@ import type { DealRecord, Buyer, BriefingIssue } from './types';
 import { records as demoRecords } from './records';
 import { buyers as demoBuyers } from './buyers';
 import { latestIssue as demoBriefing } from './briefing';
+import {
+  getPublishedRecords,
+  getBuyers,
+  getDataMode,
+  getCatalogUpdatedDate,
+} from './service';
 
 interface DataContextValue {
   records: DealRecord[];
@@ -25,59 +31,6 @@ const DataContext = createContext<DataContextValue>({
 
 export function useData() {
   return useContext(DataContext);
-}
-
-function mapDbRecordToLocal(row: Record<string, unknown>): DealRecord {
-  const recordBuyers = (row.record_buyers as { buyer_id: string; is_primary: boolean }[]) || [];
-  const secondaryBuyerIds = recordBuyers
-    .filter(rb => !rb.is_primary)
-    .map(rb => rb.buyer_id);
-
-  return {
-    id: row.id as string,
-    date: row.date as string,
-    buyer: row.buyer as string,
-    buyerId: row.buyer_id as string,
-    headline: row.headline as string,
-    recordType: row.record_type as DealRecord['recordType'],
-    recordClass: row.record_class as DealRecord['recordClass'],
-    strategicTags: (row.strategic_tags as DealRecord['strategicTags']) || [],
-    format: row.format as DealRecord['format'],
-    territory: row.territory as DealRecord['territory'],
-    evidenceTier: row.evidence_tier as DealRecord['evidenceTier'],
-    confidence: row.confidence as DealRecord['confidence'],
-    summary: row.summary as string,
-    verifiedFacts: (row.verified_facts as string[]) || [],
-    interpretation: (row.interpretation as string) || '',
-    whyItMatters: (row.why_it_matters as string) || '',
-    action: (row.action as DealRecord['action']) ?? { status: 'not_researched' as const, label: 'Route not researched', description: '' },
-    sources: (row.sources as DealRecord['sources']) || [],
-    relatedRecordIds: (row.related_record_ids as string[]) || [],
-    secondaryBuyerIds,
-    firstCaptured: (row.first_captured as string) || '',
-    lastVerified: (row.last_verified as string) || '',
-    locked: (row.locked as boolean) || false,
-  };
-}
-
-function mapDbBuyerToLocal(row: Record<string, unknown>): Buyer {
-  return {
-    id: row.id as string,
-    name: row.name as string,
-    type: row.type as Buyer['type'],
-    description: row.description as string,
-    primaryFormats: (row.primary_formats as Buyer['primaryFormats']) || [],
-    territory: row.territory as Buyer['territory'],
-    currentMandate: (row.current_mandate as string) || '',
-    mandateConfidence: (row.mandate_confidence as Buyer['mandateConfidence']) || 'low',
-    mandateEvidence: (row.mandate_evidence as string[]) || [],
-    recentActivity: (row.recent_activity as string) || '',
-    activityTimeline: (row.activity_timeline as Buyer['activityTimeline']) || [],
-    recordIds: [],
-    contactRoute: (row.contact_route_url as string) || (row.contact_route as string) || null,
-    openQuestions: (row.open_questions as string[]) || [],
-    lastVerified: (row.last_verified as string) || '',
-  };
 }
 
 function resolveBriefing(
@@ -154,93 +107,65 @@ interface DataProviderProps {
 }
 
 export function DataProvider({ children, initialRecords, initialBuyers, initialBriefing }: DataProviderProps) {
-  const [records, setRecords] = useState<DealRecord[]>(initialRecords || demoRecords);
-  const [buyers, setBuyers] = useState<Buyer[]>(initialBuyers || demoBuyers);
+  const serviceMode = getDataMode();
+  const serviceRecords = serviceMode === 'published' ? getPublishedRecords() : null;
+  const serviceBuyers = serviceMode === 'published' ? getBuyers() : null;
+
+  const records = initialRecords || serviceRecords || demoRecords;
+  const buyers = initialBuyers || serviceBuyers || demoBuyers;
   const [briefing, setBriefing] = useState<BriefingIssue>(initialBriefing || demoBriefing);
-  const [isLive, setIsLive] = useState(!!initialRecords);
-  const [loading, setLoading] = useState(!initialRecords);
-  const [latestVerifiedDate, setLatestVerifiedDate] = useState<string | null>(() => {
-    if (initialRecords) {
-      const dates = initialRecords.map(r => r.lastVerified).filter(Boolean).sort().reverse();
+  const isLive = !!initialRecords || serviceMode === 'published';
+  const loading = false;
+  const latestVerifiedDate = (() => {
+    const source = initialRecords || serviceRecords;
+    if (source) {
+      const dates = source.map(r => r.lastVerified).filter(Boolean).sort().reverse();
       return dates[0] || null;
     }
-    return null;
-  });
+    return serviceMode === 'published' ? getCatalogUpdatedDate() : null;
+  })();
 
+  // Fetch the briefing from Supabase (records/buyers are already loaded by service.ts)
   useEffect(() => {
-    if (initialRecords) return;
-    if (!supabase) {
-      setLoading(false);
-      return;
-    }
+    if (initialBriefing) return;
+    if (!supabase || serviceMode !== 'published') return;
 
     let cancelled = false;
 
-    async function fetchLiveData() {
+    async function fetchBriefing() {
       try {
-        const [recordsRes, buyersRes] = await Promise.all([
-          supabase!.from('records').select('*, record_buyers(buyer_id, is_primary)').eq('is_published', true).order('date', { ascending: false }),
-          supabase!.from('buyers').select('*').eq('is_published', true).order('last_verified', { ascending: false }),
+        const briefingRes = await supabase!
+          .from('briefings')
+          .select('*')
+          .eq('is_published', true)
+          .order('date', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (cancelled || !briefingRes.data) return;
+
+        const bId = briefingRes.data.id;
+        const [mandatesRes, quickCutsRes] = await Promise.all([
+          supabase!.from('briefing_mandates').select('*').eq('briefing_id', bId).order('position'),
+          supabase!.from('briefing_quick_cuts').select('*').eq('briefing_id', bId).order('position'),
         ]);
 
-        if (cancelled) return;
-
-        const liveRecords = recordsRes.data?.map(mapDbRecordToLocal) || [];
-        const liveBuyers = (buyersRes.data?.map(mapDbBuyerToLocal) || []).map(b => ({
-          ...b,
-          recordIds: liveRecords
-            .filter(r => r.buyerId === b.id || r.secondaryBuyerIds.includes(b.id))
-            .map(r => r.id),
-        }));
-
-        if (liveRecords.length > 0 && liveBuyers.length > 0) {
-          setRecords(liveRecords);
-          setBuyers(liveBuyers);
-          setIsLive(true);
-
-          const dates = liveRecords
-            .map(r => r.lastVerified)
-            .filter(Boolean)
-            .sort()
-            .reverse();
-          setLatestVerifiedDate(dates[0] || null);
-
-          // Fetch latest published briefing
-          const briefingRes = await supabase!
-            .from('briefings')
-            .select('*')
-            .eq('is_published', true)
-            .order('date', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (!cancelled && briefingRes.data) {
-            const bId = briefingRes.data.id;
-            const [mandatesRes, quickCutsRes] = await Promise.all([
-              supabase!.from('briefing_mandates').select('*').eq('briefing_id', bId).order('position'),
-              supabase!.from('briefing_quick_cuts').select('*').eq('briefing_id', bId).order('position'),
-            ]);
-
-            if (!cancelled) {
-              const resolved = resolveBriefing(
-                briefingRes.data,
-                mandatesRes.data || [],
-                quickCutsRes.data || [],
-                liveRecords,
-                liveBuyers,
-              );
-              setBriefing(resolved);
-            }
-          }
+        if (!cancelled) {
+          const resolved = resolveBriefing(
+            briefingRes.data,
+            mandatesRes.data || [],
+            quickCutsRes.data || [],
+            records,
+            buyers,
+          );
+          setBriefing(resolved);
         }
       } catch (err) {
-        console.warn('DataProvider: live fetch failed, using demo data.', err);
-      } finally {
-        if (!cancelled) setLoading(false);
+        console.warn('DataProvider: briefing fetch failed.', err);
       }
     }
 
-    fetchLiveData();
+    fetchBriefing();
     return () => { cancelled = true; };
   }, []);
 
