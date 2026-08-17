@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase } from './supabase';
 import type { DealRecord, Buyer, BriefingIssue } from './types';
 import { records as demoRecords } from './records';
 import { buyers as demoBuyers } from './buyers';
@@ -50,7 +50,7 @@ function mapDbRecordToLocal(row: Record<string, unknown>): DealRecord {
     verifiedFacts: (row.verified_facts as string[]) || [],
     interpretation: (row.interpretation as string) || '',
     whyItMatters: (row.why_it_matters as string) || '',
-    action: row.action as DealRecord['action'],
+    action: (row.action as DealRecord['action']) ?? { status: 'not_researched' as const, label: 'Route not researched', description: '' },
     sources: (row.sources as DealRecord['sources']) || [],
     relatedRecordIds: (row.related_record_ids as string[]) || [],
     secondaryBuyerIds,
@@ -73,8 +73,8 @@ function mapDbBuyerToLocal(row: Record<string, unknown>): Buyer {
     mandateEvidence: (row.mandate_evidence as string[]) || [],
     recentActivity: (row.recent_activity as string) || '',
     activityTimeline: (row.activity_timeline as Buyer['activityTimeline']) || [],
-    recordIds: (row.record_ids as string[]) || [],
-    contactRoute: (row.contact_route as string) || null,
+    recordIds: [],
+    contactRoute: (row.contact_route_url as string) || (row.contact_route as string) || null,
     openQuestions: (row.open_questions as string[]) || [],
     lastVerified: (row.last_verified as string) || '',
   };
@@ -186,7 +186,12 @@ export function DataProvider({ children, initialRecords, initialBuyers, initialB
         if (cancelled) return;
 
         const liveRecords = recordsRes.data?.map(mapDbRecordToLocal) || [];
-        const liveBuyers = buyersRes.data?.map(mapDbBuyerToLocal) || [];
+        const liveBuyers = (buyersRes.data?.map(mapDbBuyerToLocal) || []).map(b => ({
+          ...b,
+          recordIds: liveRecords
+            .filter(r => r.buyerId === b.id || r.secondaryBuyerIds.includes(b.id))
+            .map(r => r.id),
+        }));
 
         if (liveRecords.length > 0 && liveBuyers.length > 0) {
           setRecords(liveRecords);
@@ -228,8 +233,8 @@ export function DataProvider({ children, initialRecords, initialBuyers, initialB
             }
           }
         }
-      } catch {
-        // Fallback to demo data silently
+      } catch (err) {
+        console.warn('DataProvider: live fetch failed, using demo data.', err);
       } finally {
         if (!cancelled) setLoading(false);
       }
