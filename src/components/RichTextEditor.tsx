@@ -1,8 +1,8 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
-import { useCallback, useEffect } from 'react';
-import { Bold, Italic, Link as LinkIcon, Unlink } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Bold, Italic, Link as LinkIcon, Unlink, Code2 } from 'lucide-react';
 
 interface RichTextEditorProps {
   value: string;
@@ -12,6 +12,9 @@ interface RichTextEditorProps {
 }
 
 export function RichTextEditor({ value, onChange, rows = 3, placeholder }: RichTextEditorProps) {
+  const [sourceMode, setSourceMode] = useState(false);
+  const [draftHtml, setDraftHtml] = useState('');
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -67,47 +70,81 @@ export function RichTextEditor({ value, onChange, rows = 3, placeholder }: RichT
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   }, [editor]);
 
+  const toggleSource = useCallback(() => {
+    if (!editor) return;
+    if (sourceMode) {
+      onChange(draftHtml);
+    } else {
+      const html = editor.getHTML();
+      setDraftHtml(html === '<p></p>' ? '' : html);
+    }
+    setSourceMode(prev => !prev);
+  }, [editor, sourceMode, draftHtml, onChange]);
+
   if (!editor) return null;
 
   return (
     <div className="border border-ink-300 bg-white focus-within:border-inkred transition-colors">
       {/* Toolbar */}
       <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-ink-200 bg-cream-50">
-        <ToolbarButton
-          active={editor.isActive('bold')}
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          title="Bold"
-        >
-          <Bold size={14} />
-        </ToolbarButton>
-        <ToolbarButton
-          active={editor.isActive('italic')}
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          title="Italic"
-        >
-          <Italic size={14} />
-        </ToolbarButton>
-        <span className="w-px h-4 bg-ink-200 mx-1" />
-        <ToolbarButton
-          active={editor.isActive('link')}
-          onClick={setLink}
-          title="Add link"
-        >
-          <LinkIcon size={14} />
-        </ToolbarButton>
-        {editor.isActive('link') && (
-          <ToolbarButton
-            active={false}
-            onClick={() => editor.chain().focus().unsetLink().run()}
-            title="Remove link"
-          >
-            <Unlink size={14} />
-          </ToolbarButton>
+        {!sourceMode && (
+          <>
+            <ToolbarButton
+              active={editor.isActive('bold')}
+              onClick={() => editor.chain().focus().toggleBold().run()}
+              title="Bold"
+            >
+              <Bold size={14} />
+            </ToolbarButton>
+            <ToolbarButton
+              active={editor.isActive('italic')}
+              onClick={() => editor.chain().focus().toggleItalic().run()}
+              title="Italic"
+            >
+              <Italic size={14} />
+            </ToolbarButton>
+            <span className="w-px h-4 bg-ink-200 mx-1" />
+            <ToolbarButton
+              active={editor.isActive('link')}
+              onClick={setLink}
+              title="Add link"
+            >
+              <LinkIcon size={14} />
+            </ToolbarButton>
+            {editor.isActive('link') && (
+              <ToolbarButton
+                active={false}
+                onClick={() => editor.chain().focus().unsetLink().run()}
+                title="Remove link"
+              >
+                <Unlink size={14} />
+              </ToolbarButton>
+            )}
+            <span className="w-px h-4 bg-ink-200 mx-1" />
+          </>
         )}
+        <ToolbarButton
+          active={sourceMode}
+          onClick={toggleSource}
+          title={sourceMode ? 'Switch to visual editor' : 'Edit HTML source'}
+        >
+          <Code2 size={14} />
+        </ToolbarButton>
       </div>
-      {/* Editor area */}
+      {/* Editor / source area */}
       <div className="px-3 py-2">
-        <EditorContent editor={editor} placeholder={placeholder} />
+        {sourceMode ? (
+          <textarea
+            value={draftHtml}
+            onChange={e => setDraftHtml(e.target.value)}
+            rows={rows + 2}
+            spellCheck={false}
+            className="w-full font-mono text-xs text-ink-800 leading-relaxed bg-transparent resize-y focus:outline-none"
+            style={{ minHeight: `${rows * 1.75}rem` }}
+          />
+        ) : (
+          <EditorContent editor={editor} placeholder={placeholder} />
+        )}
       </div>
     </div>
   );
